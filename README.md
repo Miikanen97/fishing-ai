@@ -285,3 +285,55 @@ python manage.py assign_legacy_trips OMA_KAYTTAJANIMI
 Tarvittaessa lähdetilin voi antaa muodossa `--from-user fishingai_legacy_1`.
 Komento säilyttää reissujen saaliit, säätiedot ja koordinaatit.
 Omistajan poistaminen on estetty niin kauan kuin hänellä on reissuja.
+
+
+## Kalastusavustaja
+
+Sivu `/avustaja/` vaatii kirjautumisen. Lähetä-painike tekee enintään yhden
+OpenAI Responses API -kutsun (1100 vastaustokenia). Kysymyksen ajankohta ja
+paikka tulkitaan paikallisilla säännöillä; tarkenna paikka lomakkeen kenttään tarvittaessa. Oletusmalli on `gpt-4.1-mini`.
+Mallin voi vaihtaa `OPENAI_MODEL`-ympäristömuuttujalla yhteensopivaan malliin.
+Toteutus käyttää olemassa olevaa requests-kirjastoa.
+
+API-avain luetaan ainoastaan `OPENAI_API_KEY`-ympäristömuuttujasta.
+`.env.example` on avaimeton esimerkki; sovellus ei lataa `.env`-tiedostoa automaattisesti.
+Aseta avain samassa PowerShellissä, jossa käynnistät palvelimen:
+
+```powershell
+$assistantSecret = Read-Host "OpenAI API-avain" -AsSecureString
+$env:OPENAI_API_KEY = [System.Net.NetworkCredential]::new('', $assistantSecret).Password
+.\.venv\Scripts\python.exe manage.py runserver
+```
+
+Avain ei tule komentohistoriaan. Muuttuja koskee tätä PowerShell-istuntoa ja sen
+käynnistämiä prosesseja. Käynnistä palvelin uudelleen avaimen asettamisen jälkeen.
+Tarvitset OpenAI API -avaimen ja API-käyttöä varten käyttövaraa/kiintiötä.
+Älä kirjoita avainta lähdekoodiin tai commitoi paikallista `.env`-tiedostoa.
+
+OpenAI saa kysymyksen sekä enintään 40 uusimman oman reissun yhteenvedon,
+enintään 8 saalisryhmää reissulta. Historiayhteenveto rajataan 22 000 merkkiin.
+Käyttäjätunnusta, salasanaa ja vapaita reissujen/saaliiden muistiinpanoja ei lähetetä.
+Vastauksia ei tallenneta sovelluksen tietokantaan; API-pyynnössä `store=false`.
+Kysymykset ja valittu sääpaikka välitetään tarpeen mukaan ulkoisille palveluille.
+
+Sää tulee FMI:ltä. Kysymyksen paikka ohittaa lomakkeen paikan; niiden puuttuessa
+käytetään viimeisintä sopivaa omaa reissua, ensisijaisesti sen GPS-koordinaatteja.
+Ajanjaksot: nyt, tänään, huomenna, seuraavat kolme kalenteripäivää (tämä päivä mukana).
+Ennusteita verrataan kolmen tunnin välein Suomen ajassa. Yksi WFS-pyyntö kattaa
+koko vertailun. Paras aika tarkoittaa parasta saatavilla olevan otoksen aikaa.
+Sääkatkossa lähtöpisteytystä ei näytetä. Historiakysymys ei hae uutta säätä.
+Arvio on epävarma, eikä saalismäärien korrelaatio todista syy-yhteyttä.
+
+Testit käyttävät simuloituja OpenAI-vastauksia, eivätkä kuluta API-kiintiötä.
+API- ja Structured Outputs -ohjeet:
+https://developers.openai.com/api/docs/guides/structured-outputs
+
+
+Avustajan käyttöraja on 10 OpenAI HTTP-kutsua käyttäjää kohti liukuvan tunnin
+sisällä. Puuttuva avain, lomakevirhe ja ennen HTTP-kutsua keskeytyvä käsittely
+eivät kuluta kiintiötä. Kiintiö kirjataan atomisesti juuri ennen HTTP-lähetystä.
+Lähetetyn pyynnön virhe tai timeout lasketaan, koska palvelin on voinut vastaanottaa pyynnön. Käyttölaskuri ja päällekkäisen
+pyynnön esto ovat tietokannassa; niihin tallennetaan vain käyttäjäviite,
+aikaleimat ja lukituksen versio, ei kysymystä, vastausta tai API-avainta.
+Käyttörajan tarkistuksen epäonnistuessa API:a ei kutsuta. OpenAI-pyynnön timeout
+on 30 sekuntia (requests-yhteys/lukuaikakatkaisu), eikä automaattisia uusintayrityksiä ole.

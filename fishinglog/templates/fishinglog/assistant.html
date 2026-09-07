@@ -1,0 +1,40 @@
+{% extends 'fishinglog/base.html' %}
+{% block title %}Kalastusavustaja{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-12 col-xl-9">
+<h1>Kalastusavustaja</h1>
+<p class="small" role="status">OPENAI_API_KEY löytyi: {{ api_key_configured|yesno:"kyllä,ei" }}</p>
+{% if not api_key_configured %}<div class="alert alert-warning" role="alert">OPENAI_API_KEY puuttuu tämän palvelinprosessin ympäristöstä. Pysäytä vanha palvelin ja käynnistä Django siitä PowerShell-ikkunasta, jossa asetit ympäristömuuttujan.</div>{% endif %}
+<p class="text-secondary">Kysy omista saaliistasi tai suunnittele seuraavaa reissua sään ja oman historiasi perusteella.</p>
+<div class="card p-3 p-md-4 mb-4"><form method="post" id="assistant-form">{% csrf_token %}
+{% for error in form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endfor %}
+{% for field in form %}<div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+{% for error in field.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}</div>{% endfor %}
+<p class="small text-secondary">Lähetä-painikkeesta kysymys ja rajattu yhteenveto omista reissuistasi ja saaliistasi lähetetään OpenAI:lle. Käyttäjätunnusta tai reissujen muistiinpanoja ei lähetetä. Paikka välitetään tarvittaessa FMI:n säähakuun.</p>
+<button class="btn btn-primary" type="submit">Lähetä</button><span id="assistant-progress" class="ms-2" role="status"></span>
+</form></div>
+{% if result %}<section class="card p-3 p-md-4" aria-label="Avustajan vastaus">
+<h2 class="h4">{{ result.answer.recommendation }}</h2>
+{% if result.warning %}<div class="alert alert-warning">{{ result.warning }}</div>{% endif %}
+<dl class="row mt-3">
+<dt class="col-sm-4">Arvio</dt><dd class="col-sm-8">{% if result.answer.score %}{{ result.answer.score }}/10{% else %}Ei arvioitu{% endif %}</dd>
+<dt class="col-sm-4">Paras arvioitu aika</dt><dd class="col-sm-8">{{ result.answer.best_time }}</dd>
+<dt class="col-sm-4">Kalastustapa</dt><dd class="col-sm-8">{{ result.answer.method }}</dd>
+<dt class="col-sm-4">Kohdekala</dt><dd class="col-sm-8">{{ result.answer.species }}</dd>
+</dl>
+<p style="white-space: pre-line">{{ result.answer.rationale }}</p><p class="text-secondary">{{ result.answer.uncertainty }}</p>
+<p class="small">Historia: {{ result.history_count }}/{{ result.history_total }} uusinta omaa reissua, enintään 8 saalisryhmää reissulta. {% if result.history_count < 5 %}Omaa dataa on vielä vähän; arvio on epävarma.{% endif %}</p>
+{% if result.samples %}
+<p class="small">Paikka: {{ result.place }} · {{ result.place_source }}<br>Haettu {{ result.fetched_at|date:'d.m.Y H:i' }} (Suomen aika). Vertailu koskee alla näkyviä ajankohtia, ei kaikkia mahdollisia lähtöaikoja.</p>
+<details><summary>Käytetyt säätiedot ({{ result.samples|length }} ajankohtaa)</summary>
+{% for sample in result.samples %}<div class="border-top py-2 small"><strong>{{ sample.source }}</strong><br>
+Lämpötila {{ sample.values.air_temperature|default:'–' }} °C · Tuuli {{ sample.values.wind_speed|default:'–' }} m/s · Puuskat {{ sample.values.wind_gust|default:'–' }} m/s · Suunta {{ sample.values.wind_direction|default:'–' }}°<br>
+Paine {{ sample.values.air_pressure|default:'–' }} hPa · Pilvisyys {{ sample.values.cloud_cover|default:'–' }} % · Sade {{ sample.values.precipitation|default:'–' }} mm/h
+{% if sample.missing %}<br>Puuttuvat tiedot: {{ sample.missing|join:', ' }}{% endif %}</div>{% endfor %}
+</details>{% endif %}
+{% if result.missing_count %}<p class="text-warning">{{ result.missing_count }} vertailuajankohdan säätiedot puuttuivat.</p>{% endif %}
+</section>{% endif %}
+</div></div>
+{% load static %}<script src="{% static 'fishinglog/assistant.js' %}" defer></script>
+{% endblock %}

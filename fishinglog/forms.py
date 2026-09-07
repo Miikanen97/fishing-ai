@@ -115,3 +115,11 @@ class LoginForm(AuthStyleMixin, AuthenticationForm):
 
 class RegistrationForm(AuthStyleMixin, UserCreationForm):
     pass
+
+
+class AssistantForm(forms.Form):
+    question = forms.CharField(label='Kysymys', max_length=1000, widget=forms.Textarea(attrs={
+        'class': 'form-control', 'rows': 3, 'placeholder': 'Kannattaako tänään lähteä Kyyvedelle jiggaamaan?'}))
+    place = forms.CharField(label='Paikka (valinnainen)', max_length=200, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Esimerkiksi Kyyvesi'}),
+        help_text='Kysymyksessä annettu paikka on ensisijainen. Muuten käytetään tätä paikkaa tai viimeisintä sopivaa omaa reissua.')

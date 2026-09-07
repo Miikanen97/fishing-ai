@@ -13,7 +13,8 @@
 <header class="bg-white border-bottom">
 <nav class="container py-3 d-flex flex-wrap align-items-center gap-3" aria-label="Päänavigaatio">
 <a class="brand me-auto text-decoration-none" href="{% url 'fishinglog:home' %}">Fishing Log <span class="d-block small fw-normal text-secondary">Oma kalastuspäiväkirja</span></a>
-{% if user.is_authenticated %}
+{% if user.is_authenticated %}
+<a class="nav-link" href="{% url 'fishinglog:assistant' %}">Kalastusavustaja</a>
 <a class="nav-link" href="{% url 'fishinglog:trip_list' %}">Omat reissut</a>
 <a class="btn btn-primary" href="{% url 'fishinglog:trip_create' %}">+ Lisää kalastusreissu</a>
 <span class="text-break">{{ user.get_username }}</span>

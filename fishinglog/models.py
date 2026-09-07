@@ -69,3 +69,10 @@ class Catch(models.Model):
     def __str__(self):
         return self.species
 
+
+
+class AssistantUsage(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    attempts = models.JSONField(default=list)
+    version = models.PositiveIntegerField(default=0)
+    busy_until = models.DateTimeField(null=True)
