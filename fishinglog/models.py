@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse
@@ -9,6 +10,7 @@ def measurement(label):
 
 
 class Trip(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='fishing_trips', verbose_name='Omistaja')
     date = models.DateField('Päivämäärä', default=timezone.localdate)
     lake = models.CharField('Järven nimi', max_length=150)
     location = models.CharField('Kalastuspaikka', max_length=200)

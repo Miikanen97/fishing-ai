@@ -1,3 +1,4 @@
+from .test_helpers import LoggedInMixin
 from decimal import Decimal
 from unittest.mock import patch
 from django.test import TestCase, TransactionTestCase
@@ -10,7 +11,7 @@ from .test_catch_batch import trip_data
 from .test_weather import TARGET
 
 
-class MapTests(TestCase):
+class MapTests(LoggedInMixin, TestCase):
     def test_form_and_detail_maps_and_zero_coordinates(self):
         data = {**trip_data(), 'latitude': '0', 'longitude': '0', 'weather_latitude': '62.1', 'weather_longitude': '26.1'}
         response = self.client.post(reverse('fishinglog:trip_create'), data)
@@ -32,7 +33,7 @@ class MapTests(TestCase):
         self.assertEqual(trip.weather_latitude, Decimal('62.1'))
 
     def test_no_gps_does_not_show_weather_location_as_marker(self):
-        trip = Trip.objects.create(**trip_data(), weather_latitude='62.1', weather_longitude='26.1')
+        trip = Trip.objects.create(owner=self.user, **trip_data(), weather_latitude='62.1', weather_longitude='26.1')
         response = self.client.get(trip.get_absolute_url())
         self.assertNotContains(response, 'id="fishing-map"')
         self.assertContains(response, 'Tarkkaa kalastuspaikkaa ei ole valittu')

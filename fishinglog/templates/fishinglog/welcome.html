@@ -1,0 +1,2 @@
+{% extends 'fishinglog/base.html' %}
+{% block content %}<section class="hero rounded-4 p-4 p-md-5"><h1 class="display-5 fw-bold">Oma kalastuspäiväkirja</h1><p class="lead">Kirjaa reissut, sää ja saaliit. Vain sinä näet omat reissusi.</p><div class="d-flex flex-wrap gap-2"><a class="btn btn-light" href="{% url 'login' %}">Kirjaudu sisään</a><a class="btn btn-outline-light" href="{% url 'register' %}">Rekisteröidy</a></div></section>{% endblock %}

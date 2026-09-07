@@ -1,12 +1,14 @@
+from .test_helpers import LoggedInMixin
 from django.test import Client, TestCase
 from django.urls import reverse
 from .models import Catch, Trip
 
 
-class FishingLogTests(TestCase):
+class FishingLogTests(LoggedInMixin, TestCase):
     def setUp(self):
+        super().setUp()
         self.data = dict(date='2026-09-07', lake='Saimaa', location='Selkä', start_time='08:00', end_time='16:00', weather='Pilvinen', air_temperature='-2.5', water_temperature='12.0', fishing_method='Jiggaus', depth='8.5', boat_speed='0', notes='Testireissu')
-        self.trip = Trip.objects.create(**self.data)
+        self.trip = Trip.objects.create(owner=self.user, **self.data)
         self.catch_data = dict(species='Kuha', length='0.525', weight='1.5', lure_name='Jigi', lure_color='Vihreä', time='10:30', depth='8.0', notes='Ensimmäinen')
         self.catch = Catch.objects.create(trip=self.trip, **self.catch_data)
 
@@ -73,7 +75,7 @@ class FishingLogTests(TestCase):
         self.assertEqual(Catch.objects.count(), 1)
 
     def test_wrong_trip_and_missing_objects(self):
-        other = Trip.objects.create(**self.data)
+        other = Trip.objects.create(owner=self.user, **self.data)
         for name in ['catch_update', 'catch_delete']:
             self.assertEqual(self.client.post(self.url(name, other.pk, self.catch.pk), self.catch_data).status_code, 404)
         self.assertEqual(self.client.get(self.url('trip_detail', 99999)).status_code, 404)
@@ -87,7 +89,7 @@ class FishingLogTests(TestCase):
     def test_empty_state_and_pagination(self):
         Trip.objects.all().delete()
         self.assertContains(self.client.get(self.url('home')), 'Ensimmäinen reissu odottaa')
-        Trip.objects.bulk_create([Trip(**self.data) for _ in range(13)])
+        Trip.objects.bulk_create([Trip(owner=self.user, **self.data) for _ in range(13)])
         response = self.client.get(self.url('trip_list'))
         self.assertEqual(len(response.context['trips']), 12)
         self.assertEqual(len(self.client.get(self.url('trip_list') + '?page=2').context['trips']), 1)

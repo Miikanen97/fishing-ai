@@ -265,3 +265,23 @@ karttapisteen muokkauksen, nollakoordinaatit, säähaun prioriteetin, markerin s
 paikannuksen onnistumisen/epäämisen ja myöhäisen paikannusvastauksen hylkäämisen.
 Selaimessa tarkistettu karttaklikkaus, markerin veto, mobiiliasettelu ja FMI-haku
 karttapisteestä. Todellista käyttäjän sijaintilupaa ei tarvittu testaukseen.
+
+
+## Käyttäjät ja kirjautuminen
+
+Kirjautuminen: `/kirjaudu/`, rekisteröityminen: `/rekisteroidy/`.
+Uloskirjautuminen tapahtuu yläpalkin POST-painikkeella.
+Reissut ja saaliit näkyvät vain reissun omistajalle. Myös säähaku vaatii kirjautumisen.
+
+Migraatio 0006 säilyttää vanhat reissut ja saaliit suljetulla
+`fishingai_legacy`-tilillä (tarvittaessa numeroitu nimi). Tilillä ei voi kirjautua.
+Rekisteröityminen ei anna automaattisesti pääsyä vanhoihin tietoihin.
+Kun oikea käyttäjä on rekisteröitynyt, ylläpitäjä voi siirtää vanhat reissut:
+
+```powershell
+python manage.py assign_legacy_trips OMA_KAYTTAJANIMI
+```
+
+Tarvittaessa lähdetilin voi antaa muodossa `--from-user fishingai_legacy_1`.
+Komento säilyttää reissujen saaliit, säätiedot ja koordinaatit.
+Omistajan poistaminen on estetty niin kauan kuin hänellä on reissuja.

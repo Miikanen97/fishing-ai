@@ -97,3 +97,21 @@ class CatchOutcomeForm(forms.Form):
     no_catch = forms.BooleanField(label='Ei saalista', required=False,
                                  widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
 
+
+
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+
+
+class AuthStyleMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+
+
+class LoginForm(AuthStyleMixin, AuthenticationForm):
+    pass
+
+
+class RegistrationForm(AuthStyleMixin, UserCreationForm):
+    pass

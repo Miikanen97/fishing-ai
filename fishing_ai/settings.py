@@ -145,3 +145,7 @@ MAILERS = {
 
 # OSM tile requests need an origin Referer; browser caching stays enabled.
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'fishinglog:home'
+LOGOUT_REDIRECT_URL = 'fishinglog:home'

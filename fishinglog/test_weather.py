@@ -1,3 +1,4 @@
+from .test_helpers import LoggedInMixin
 from datetime import datetime, timedelta, timezone as utc
 from decimal import Decimal
 from unittest.mock import patch, MagicMock
@@ -158,8 +159,9 @@ class WeatherServiceTests(TestCase):
             self.assertFalse(form.is_valid())
 
 
-class WeatherViewTests(TestCase):
+class WeatherViewTests(LoggedInMixin, TestCase):
     def setUp(self):
+        super().setUp()
         self.url = reverse('fishinglog:weather_lookup')
         self.data = dict(date='2024-06-01', time='12:00', place='Helsinki')
 
@@ -212,8 +214,9 @@ class WeatherViewTests(TestCase):
             self.assertIn(field, form.errors)
 
 
-class WeatherExtensionTests(TestCase):
+class WeatherExtensionTests(LoggedInMixin, TestCase):
     def setUp(self):
+        super().setUp()
         cache.clear()
 
     def test_gust_description_and_compass(self):

@@ -1,3 +1,4 @@
+from .test_helpers import LoggedInMixin
 from decimal import Decimal
 from unittest.mock import patch
 
@@ -25,9 +26,10 @@ def batch(*rows):
             **{f'catches-{i}-{key}': value for i, row in enumerate(rows) for key, value in row.items()}}
 
 
-class CatchBatchTests(TestCase):
+class CatchBatchTests(LoggedInMixin, TestCase):
     def setUp(self):
-        self.trip = Trip.objects.create(**trip_data())
+        super().setUp()
+        self.trip = Trip.objects.create(owner=self.user, **trip_data())
         self.url = reverse('fishinglog:catch_create', args=[self.trip.pk])
 
     def test_first_form_and_controls(self):
