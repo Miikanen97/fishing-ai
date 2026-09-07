@@ -1,0 +1,9 @@
+{% extends 'fishinglog/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="form-shell mx-auto card p-4">
+<h1 class="h3">{{ title }}</h1><p>Haluatko varmasti poistaa: <strong>{{ object }}</strong>?</p>
+{% if warning %}<p class="alert alert-warning">{{ warning }}</p>{% endif %}
+<p class="text-secondary">Poistoa ei voi perua.</p>
+<form method="post">{% csrf_token %}<div class="d-flex flex-wrap gap-2"><button class="btn btn-danger" type="submit">Vahvista poisto</button><a class="btn btn-outline-secondary" href="{{ cancel_url }}">Peruuta</a></div></form>
+</div>{% endblock %}

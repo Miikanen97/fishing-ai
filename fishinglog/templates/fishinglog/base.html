@@ -1,0 +1,24 @@
+{% load static %}
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Fishing Log{% endblock %} · Kalastuspäiväkirja</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+<link href="{% static 'fishinglog/style.css' %}" rel="stylesheet">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+<a class="visually-hidden-focusable" href="#content">Siirry sisältöön</a>
+<header class="bg-white border-bottom">
+<nav class="container py-3 d-flex flex-wrap align-items-center gap-3" aria-label="Päänavigaatio">
+<a class="brand me-auto text-decoration-none" href="{% url 'fishinglog:home' %}">Fishing Log <span class="d-block small fw-normal text-secondary">Oma kalastuspäiväkirja</span></a>
+<a class="nav-link" href="{% url 'fishinglog:trip_list' %}">Kaikki reissut</a>
+<a class="btn btn-primary" href="{% url 'fishinglog:trip_create' %}">+ Lisää kalastusreissu</a>
+</nav></header>
+<main id="content" class="container py-4 py-md-5">
+{% for message in messages %}<div class="alert alert-success" role="status">{{ message }}</div>{% endfor %}
+{% block content %}{% endblock %}
+</main>
+<footer class="container py-4 text-secondary small border-top">Fishing Log · Reissut ja saaliit talteen</footer>
+</body></html>

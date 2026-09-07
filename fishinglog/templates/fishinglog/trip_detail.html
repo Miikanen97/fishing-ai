@@ -1,0 +1,57 @@
+{% extends 'fishinglog/base.html' %}
+{% load l10n %}
+{% block extra_head %}{% if trip.latitude != None and trip.longitude != None %}{% include 'fishinglog/map_assets.html' %}{% endif %}{% endblock %}
+{% block title %}{{ trip.lake }}{% endblock %}
+{% block content %}
+<a href="{% url 'fishinglog:trip_list' %}" class="d-inline-block mb-3">← Kaikki reissut</a>
+<div class="d-flex flex-wrap justify-content-between gap-3 mb-4">
+<div><p class="text-secondary mb-1">{{ trip.date|date:"d.m.Y" }} · {{ trip.start_time|time:"H:i" }}–{{ trip.end_time|time:"H:i" }}{% if trip.end_time < trip.start_time %} (+1 vrk){% endif %}</p><h1>{{ trip.lake }}</h1><p class="lead mb-0">{{ trip.location }}</p></div>
+<div class="d-flex flex-wrap align-items-start gap-2"><a class="btn btn-outline-primary" href="{% url 'fishinglog:trip_update' trip.pk %}">Muokkaa reissua</a><a class="btn btn-outline-danger" href="{% url 'fishinglog:trip_delete' trip.pk %}">Poista reissu</a></div>
+</div>
+<section class="card p-3 mb-4"><h2 class="h5">Kalastuspaikka</h2>
+{% if trip.latitude != None and trip.longitude != None %}
+<div id="fishing-map" class="fishing-map fishing-map-small" data-latitude="{{ trip.latitude|unlocalize }}" data-longitude="{{ trip.longitude|unlocalize }}" role="region" aria-label="Kalastuspaikka kartalla"></div>
+<p id="map-status" class="small mt-2" role="status">Koordinaatit: {{ trip.latitude }}, {{ trip.longitude }}</p>
+<a href="https://www.openstreetmap.org/?mlat={{ trip.latitude|unlocalize }}&amp;mlon={{ trip.longitude|unlocalize }}#map=15/{{ trip.latitude|unlocalize }}/{{ trip.longitude|unlocalize }}" target="_blank" rel="noopener" class="btn btn-outline-primary align-self-start">Avaa kartalla</a>
+{% else %}<p class="text-secondary mb-0">Tarkkaa kalastuspaikkaa ei ole valittu. Voit valita sen muokkaamalla reissua.</p>{% endif %}</section>
+<div class="card p-4 mb-4">
+<h2 class="h5 mb-3">Reissun olosuhteet</h2>
+<dl class="row mb-0">
+<div class="col-6 col-md-4 mb-3"><dt>Kalastustapa</dt><dd>{{ trip.fishing_method }}</dd></div>
+<div class="col-6 col-md-4 mb-3"><dt>Sää</dt><dd>{{ trip.weather|default:"–" }}</dd></div>
+<div class="col-6 col-md-4 mb-3"><dt>Ilman lämpötila (°C)</dt><dd>{{ trip.air_temperature|default_if_none:"–" }}</dd></div>
+<div class="col-6 col-md-4 mb-3"><dt>Veden lämpötila (°C)</dt><dd>{{ trip.water_temperature|default_if_none:"–" }}</dd></div>
+<div class="col-6 col-md-4 mb-3"><dt>Syvyys (m)</dt><dd>{{ trip.depth|default_if_none:"–" }}</dd></div>
+<div class="col-6 col-md-4 mb-3"><dt>Veneen nopeus (km/h)</dt><dd>{{ trip.boat_speed|default_if_none:"–" }}</dd></div>
+</dl>
+<h2 class="h5">Muistiinpanot</h2><div>{{ trip.notes|default:"Ei muistiinpanoja."|linebreaksbr }}</div>
+<h2 class="h5 mt-4">Tuuli ja muut säätiedot</h2>
+{% if trip.weather_latitude != None and trip.weather_longitude != None %}<p class="small">Säähaun paikan koordinaatit: {{ trip.weather_latitude }}, {{ trip.weather_longitude }}</p>{% endif %}
+<dl class="row mb-0">
+<div class="col-6 col-md-4"><dt>Tuulen nopeus (m/s)</dt><dd>{{ trip.wind_speed|default_if_none:"–" }}</dd></div>
+<div class="col-6 col-md-4"><dt>Tuulen suunta (°)</dt><dd>{{ trip.wind_direction|default_if_none:"–" }} {{ trip.wind_compass }}</dd></div>
+<div class="col-6 col-md-4"><dt>Tuulenpuuskat (m/s)</dt><dd>{{ trip.wind_gust|default_if_none:"–" }}</dd></div>
+<div class="col-6 col-md-4"><dt>Ilmanpaine (hPa)</dt><dd>{{ trip.air_pressure|default_if_none:"–" }}</dd></div>
+<div class="col-6 col-md-4"><dt>Pilvisyys (%)</dt><dd>{{ trip.cloud_cover|default_if_none:"–" }}</dd></div>
+<div class="col-6 col-md-4"><dt>Sade tunnin aikana (mm)</dt><dd>{{ trip.precipitation|default_if_none:"–" }}</dd></div>
+</dl>
+{% if trip.weather_source %}<p class="small text-secondary mt-2 mb-0">Säähaun lähdetiedot (arvoja on voitu muokata): {{ trip.weather_source }}. <a href="https://www.ilmatieteenlaitos.fi/avoin-data">Ilmatieteen laitoksen avoin data</a>.</p>{% endif %}
+</div>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"><h2 class="h4 mb-0">Saaliit ({{ trip.catches.count }})</h2><a class="btn btn-primary" href="{% url 'fishinglog:catch_create' trip.pk %}">+ Lisää saalis</a></div>
+<div class="row g-3">
+{% for catch in trip.catches.all %}
+<div class="col-12 col-lg-6"><article class="card p-4 h-100">
+<div class="d-flex justify-content-between gap-2"><h3 class="h4">{{ catch.species }}</h3><span class="text-secondary">{{ catch.time|time:"H:i" }}</span></div>
+<dl class="row mt-2">
+<div class="col-6"><dt>Pituus (m)</dt><dd>{{ catch.length|floatformat:"-3"|default:"–" }}</dd></div>
+<div class="col-6"><dt>Paino (kg)</dt><dd>{{ catch.weight|floatformat:"-3"|default:"–" }}</dd></div>
+<div class="col-6"><dt>Vieheen nimi</dt><dd>{{ catch.lure_name|default:"–" }}</dd></div>
+<div class="col-6"><dt>Vieheen väri</dt><dd>{{ catch.lure_color|default:"–" }}</dd></div>
+<div class="col-6"><dt>Syvyys (m)</dt><dd>{{ catch.depth|default_if_none:"–" }}</dd></div>
+</dl>
+<p>{{ catch.notes|default:"Ei muistiinpanoja."|linebreaksbr }}</p>
+<div class="d-flex flex-wrap gap-2 mt-auto"><a class="btn btn-outline-primary" href="{% url 'fishinglog:catch_update' trip.pk catch.pk %}" aria-label="Muokkaa saalista: {{ catch.species }}">Muokkaa</a><a class="btn btn-outline-danger" href="{% url 'fishinglog:catch_delete' trip.pk catch.pk %}" aria-label="Poista saalis: {{ catch.species }}">Poista</a></div>
+</article></div>
+{% empty %}<div class="col-12"><div class="card p-4 text-center"><h3 class="h5">{% if trip.no_catch %}Ei saalista{% else %}Ei vielä saaliita{% endif %}</h3><p class="text-secondary mb-0">{% if trip.no_catch %}Reissu on merkitty saaliittomaksi. Voit korjata tiedon lisäämällä saaliin.{% else %}Lisää saaliita tai merkitse reissu saaliittomaksi yllä olevasta painikkeesta.{% endif %}</p></div></div>{% endfor %}
+</div>
+{% endblock %}

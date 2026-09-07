@@ -1,0 +1,33 @@
+{% extends 'fishinglog/base.html' %}
+{% load static %}
+{% block title %}Lisää saalis{% endblock %}
+{% block content %}
+<div class="form-shell mx-auto">
+<a class="d-inline-block mb-3" href="{{ trip.get_absolute_url }}">← Takaisin reissulle</a>
+<h1>Lisää saalis</h1>
+<p class="text-secondary">{{ trip }} · {{ trip.location }}</p>
+<p>Lisää jokainen kala omalle lomakkeelleen ja tallenna saaliit yhdellä kertaa. Pituus ilmoitetaan metreinä ja paino kiloina. Tähdellä (*) merkityt kentät ovat pakollisia.</p>
+<form method="post" id="catch-batch-form">
+{% csrf_token %}
+{{ formset.management_form }}
+<div class="card p-3 mb-4">
+<div class="form-check">{{ outcome.no_catch }} <label class="form-check-label fw-semibold" for="{{ outcome.no_catch.id_for_label }}">Ei saalista</label></div>
+<p class="small text-secondary mb-0 mt-2">Merkitse reissu saaliittomaksi. Kalalomakkeita ei silloin tallenneta. Voit lisätä saaliita myöhemmin.</p>
+{% for error in outcome.no_catch.errors %}<p class="text-danger mt-2 mb-0" role="alert">{{ error }}</p>{% endfor %}
+</div>
+{% if formset.non_form_errors %}<div class="alert alert-danger" role="alert">{{ formset.non_form_errors }}</div>{% endif %}
+<fieldset id="fish-fields">
+<legend class="visually-hidden">Lisättävät kalat</legend>
+<div id="fish-forms">
+{% for form in formset %}{% include 'fishinglog/catch_row.html' with number=forloop.counter %}{% endfor %}
+</div>
+<button type="button" id="add-fish" class="btn btn-outline-primary mb-3">+ Lisää kala</button>
+</fieldset>
+<p id="fish-status" role="status" aria-live="polite" class="small text-secondary"></p>
+<div class="d-flex flex-wrap gap-2 mt-3"><button type="submit" class="btn btn-primary">Tallenna saaliit</button><a class="btn btn-outline-secondary" href="{{ trip.get_absolute_url }}">Peruuta</a></div>
+<noscript><p class="small mt-3">Usean kalan lisääminen samalla kertaa tarvitsee JavaScriptin. Voit tallentaa yhden kalan kerrallaan tai valita Ei saalista.</p></noscript>
+</form>
+<template id="fish-template">{% include 'fishinglog/catch_row.html' with form=formset.empty_form number="" %}</template>
+</div>
+<script src="{% static 'fishinglog/catches.js' %}" defer></script>
+{% endblock %}

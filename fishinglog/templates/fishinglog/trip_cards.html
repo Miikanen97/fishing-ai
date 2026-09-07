@@ -1,0 +1,12 @@
+<div class="row g-3">
+{% for trip in trips %}
+<div class="col-12 col-md-6 col-lg-4"><article class="card h-100 p-4">
+<p class="small text-secondary mb-2">{{ trip.date|date:"d.m.Y" }} · {{ trip.start_time|time:"H:i" }}–{{ trip.end_time|time:"H:i" }}</p>
+<h2 class="h4"><a href="{{ trip.get_absolute_url }}">{{ trip.lake }}</a></h2>
+<p class="text-secondary">{{ trip.location }}</p>
+<div class="mt-auto d-flex flex-wrap gap-2"><span class="badge text-bg-light">{{ trip.fishing_method }}</span><span class="badge text-bg-light">{% if trip.no_catch and not trip.catch_count %}Ei saalista{% else %}{{ trip.catch_count }} saalista{% endif %}</span></div>
+</article></div>
+{% empty %}
+<div class="col-12"><div class="card text-center p-5"><h2 class="h4">Ensimmäinen reissu odottaa</h2><p class="text-secondary">Aloita kirjaamalla kalastusreissun tiedot. Voit lisätä saaliit sen jälkeen.</p><div><a class="btn btn-primary" href="{% url 'fishinglog:trip_create' %}">Lisää kalastusreissu</a></div></div></div>
+{% endfor %}
+</div>
