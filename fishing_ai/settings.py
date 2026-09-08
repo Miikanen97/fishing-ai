@@ -18,14 +18,30 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
+from django.core.exceptions import ImproperlyConfigured
+import dj_database_url
 
-# SECURITY WARNING: keep the secret key used in production secret!
-# Keep the local development key outside version control; deployments can use
-# the DJANGO_SECRET_KEY environment variable.
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+
+def env_bool(name, default=False):
+    value = os.environ.get(name, str(default)).strip().lower()
+    if value not in ('true', 'false', '1', '0', 'yes', 'no'):
+        raise ImproperlyConfigured(f'{name}: käytä arvoa True tai False.')
+    return value in ('true', '1', 'yes')
+
+
+def env_list(name, default=''):
+    return [value.strip() for value in os.environ.get(name, default).split(',') if value.strip()]
+
+
+PRODUCTION = os.environ.get('DJANGO_ENV', '').lower() == 'production' or bool(os.environ.get('RAILWAY_ENVIRONMENT_ID'))
+DEBUG = env_bool('DEBUG', not PRODUCTION)
+if PRODUCTION and DEBUG:
+    raise ImproperlyConfigured('DEBUG ei saa olla True tuotannossa.')
+
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '').strip()
 if not SECRET_KEY:
+    if PRODUCTION or not DEBUG:
+        raise ImproperlyConfigured('DJANGO_SECRET_KEY vaaditaan tuotannossa.')
     _secret_file = BASE_DIR / '.django-secret-key'
     try:
         SECRET_KEY = _secret_file.read_text(encoding='utf-8').strip()
@@ -33,10 +49,20 @@ if not SECRET_KEY:
         SECRET_KEY = secrets.token_urlsafe(50)
         _secret_file.write_text(SECRET_KEY, encoding='utf-8')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', '' if PRODUCTION else 'localhost,127.0.0.1,[::1]')
+CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS')
+if PRODUCTION and (not ALLOWED_HOSTS or '*' in ALLOWED_HOSTS):
+    raise ImproperlyConfigured('Määritä tuotannon ALLOWED_HOSTS tarkasti ilman *-arvoa.')
 
-ALLOWED_HOSTS = []
+# Railway terminates HTTPS at its reverse proxy.
+if PRODUCTION:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
 
 
 # Application definition
@@ -53,6 +79,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -84,12 +111,19 @@ WSGI_APPLICATION = 'fishing_ai.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+database_url = os.environ.get('DATABASE_URL', '').strip()
+if database_url:
+    try:
+        database = dj_database_url.parse(database_url, conn_max_age=60, conn_health_checks=True)
+    except (ValueError, KeyError):
+        raise ImproperlyConfigured('DATABASE_URL ei ole kelvollinen tietokantaosoite.') from None
+    if PRODUCTION and database['ENGINE'] != 'django.db.backends.postgresql':
+        raise ImproperlyConfigured('Tuotanto vaatii PostgreSQL-tietokannan.')
+    DATABASES = {'default': database}
+else:
+    if PRODUCTION:
+        raise ImproperlyConfigured('DATABASE_URL vaaditaan tuotannossa.')
+    DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': BASE_DIR / 'db.sqlite3'}}
 
 
 # Password validation
@@ -126,7 +160,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage' if DEBUG else
+                   'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+}
 
 # Allow the formset's 1,000 fish plus management fields in one submission.
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 12000
@@ -137,7 +177,7 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 12000
 
 MAILERS = {
     'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+        'BACKEND': 'django.core.mail.backends.smtp.EmailBackend' if PRODUCTION else 'django.core.mail.backends.console.EmailBackend',
     },
 }
 

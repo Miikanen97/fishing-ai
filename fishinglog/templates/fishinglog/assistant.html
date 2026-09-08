@@ -3,7 +3,6 @@
 {% block content %}
 <div class="row justify-content-center"><div class="col-12 col-xl-9">
 <h1>Kalastusavustaja</h1>
-<p class="small" role="status">OPENAI_API_KEY löytyi: {{ api_key_configured|yesno:"kyllä,ei" }}</p>
 {% if not api_key_configured %}<div class="alert alert-warning" role="alert">OPENAI_API_KEY puuttuu tämän palvelinprosessin ympäristöstä. Pysäytä vanha palvelin ja käynnistä Django siitä PowerShell-ikkunasta, jossa asetit ympäristömuuttujan.</div>{% endif %}
 <p class="text-secondary">Kysy omista saaliistasi tai suunnittele seuraavaa reissua sään ja oman historiasi perusteella.</p>
 <div class="card p-3 p-md-4 mb-4"><form method="post" id="assistant-form">{% csrf_token %}

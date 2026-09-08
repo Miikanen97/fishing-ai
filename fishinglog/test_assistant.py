@@ -244,7 +244,7 @@ class KeyDiagnosticsTests(TestCase):
             for value, status in [('', 'ei'), ('test-only-placeholder', 'kyllä'), ('', 'ei')]:
                 with patch.dict(os.environ, {'OPENAI_API_KEY': value}):
                     response = self.client.get(reverse('fishinglog:assistant'))
-                    self.assertContains(response, 'OPENAI_API_KEY löytyi: ' + status)
+                    self.assertNotContains(response, 'OPENAI_API_KEY löytyi:')
                     if value:
                         self.assertNotContains(response, 'OPENAI_API_KEY puuttuu')
                         self.assertNotContains(response, value)

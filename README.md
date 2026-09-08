@@ -337,3 +337,63 @@ pyynnön esto ovat tietokannassa; niihin tallennetaan vain käyttäjäviite,
 aikaleimat ja lukituksen versio, ei kysymystä, vastausta tai API-avainta.
 Käyttörajan tarkistuksen epäonnistuessa API:a ei kutsuta. OpenAI-pyynnön timeout
 on 30 sekuntia (requests-yhteys/lukuaikakatkaisu), eikä automaattisia uusintayrityksiä ole.
+
+
+## Railway-tuotantoon valmistelu
+
+Projektin juuri on kansio, jossa ovat `manage.py`, `requirements.txt` ja `railway.json`.
+Kun GitHub-repossa nämä ovat juuressa, Railwayn Root Directory on `/`.
+Paikallinen `python manage.py runserver` käyttää edelleen SQLitea, ellei DATABASE_URL ole asetettu.
+`.env.example` on dokumentaatio; `.env`-tiedostoa ei lueta automaattisesti.
+
+1. Luo Railway-projektiin PostgreSQL-palvelu ja GitHub-repoon yhdistetty Django-palvelu.
+2. Lisää Django-palveluun alla olevat muuttujat. Luo sille julkinen HTTPS-domain ja
+   lisää juuri tämä domain sallittuihin hosteihin sekä CSRF-origineihin.
+3. Railway käyttää `railway.json`-tiedostoa: build ajaa `collectstatic --noinput`,
+   pre-deploy ajaa `migrate --noinput`, ja käynnistys ajaa Gunicornin portissa `$PORT`.
+   Migraatioita ei ajeta jokaisessa Gunicorn-workerissa. Epäonnistunut migraatio estää
+   uuden version käynnistyksen. Älä käynnistä samanaikaisia migraatioajoja.
+4. Ota tietokantavarmuuskopio ennen myöhempiä skeemamuutoksia. Pre-deploy-migraatio
+   muuttaa yhteistä tietokantaa ennen liikenteen siirtymistä: käytä jatkossa taaksepäin
+   yhteensopivia migraatioita. Älä muokkaa jo ajettuja migraatiotiedostoja.
+5. Varmista deployn jälkeen kirjautuminen, rekisteröityminen, kartta, sää, staattiset
+   tiedostot ja omistajarajaukset. AI:n oikea kokeilu tehdään erikseen API-avaimella.
+
+| Muuttuja | Railway-arvo |
+| --- | --- |
+| `DJANGO_ENV` | `production` |
+| `DEBUG` | `False` |
+| `DJANGO_SECRET_KEY` | Pitkä satunnainen salainen avain, sama kaikille workereille ja uudelleenkäynnistyksille |
+| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (vaihda Postgres oman tietokantapalvelun nimeksi) |
+| `ALLOWED_HOSTS` | `oma-palvelu.up.railway.app` ilman protokollaa; useat pilkulla eroteltuina |
+| `CSRF_TRUSTED_ORIGINS` | `https://oma-palvelu.up.railway.app`; useat pilkulla eroteltuina |
+| `OPENAI_API_KEY` | Oma OpenAI API-avain; tarvitaan vain Kalastusavustajan käyttöön |
+| `OPENAI_MODEL` | Valinnainen, oletus `gpt-4.1-mini` |
+
+Railway asettaa `PORT`-muuttujan. PostgreSQL-yhteys käyttää DATABASE_URL:n SSL-asetuksia;
+Railwayn sisäinen tietokantaosoite toimii Railway-verkon sisällä. Älä kopioi oikeaa
+DATABASE_URL-arvoa lokiin, README:hen tai Git-repoon.
+
+Tuotannossa puuttuva Django-avain, PostgreSQL-osoite tai host-lista estää käynnistyksen.
+Railway tunnistetaan myös `RAILWAY_ENVIRONMENT_ID`-muuttujasta: DEBUG=True estetään.
+HTTPS-proxya varten käytetään X-Forwarded-Proto-otsaketta, suojattuja evästeitä,
+HTTPS-uudelleenohjausta ja HSTS:ää. Ali-domainien HSTS ja preload eivät ole käytössä;
+`check --deploy` ilmoittaa niistä kaksi tarkoituksellista varoitusta. Niitä ei aktivoida
+ennen oman domainin kaikkien alidomainien HTTPS-valmiuden varmistusta.
+
+WhiteNoise tarjoaa collectstatic-kansion pakatut ja sisällön perusteella nimetyt tiedostot.
+`staticfiles/`, `.env`, `.django-secret-key` ja SQLite-tiedostot ovat Gitin ulkopuolella.
+Tuotannossa Django-avain ei koskaan tule paikallisesta avaintiedostosta.
+OPENAI_API_KEY luetaan edelleen vain prosessin ympäristöstä; avaimen kyllä/ei-teksti
+poistettiin käyttöliittymästä. Diagnostiikkakomento on käytettävissä vain palvelimen komentoriviltä.
+
+Paikallista SQLite-dataa ei siirretä automaattisesti uuteen PostgreSQL-tietokantaan.
+Vanhojen käyttäjien ja reissujen siirto on tehtävä erillisenä varmuuskopioituna työnä.
+Nykyinen kirjautuminen ei lähetä sähköpostia. Tuotannon SMTP-backendille pitää määrittää
+palvelu erikseen, jos sähköpostitoimintoja lisätään myöhemmin.
+
+Tarkistukset: `python manage.py test`, `python manage.py check`,
+`python manage.py collectstatic --noinput` ja tuotantoasetuksilla `python manage.py check --deploy`.
+Gunicorn on Railwayn Linux-palvelinta varten; Windows-kehityksessä käytetään runserveriä.
+Ohjeet: https://docs.railway.com/guides/django ja
+https://whitenoise.readthedocs.io/en/stable/django.html
