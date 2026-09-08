@@ -1,0 +1,13 @@
+.forecast-strip { display:flex; gap:.65rem; overflow-x:auto; max-width:100%; padding:.2rem .1rem .75rem; scroll-snap-type:x proximity; scrollbar-width:thin; scrollbar-color:#91b3a9 #edf3f0; }
+.forecast-strip:focus-visible { outline:2px solid #14665e; outline-offset:3px; border-radius:.6rem; }
+.forecast-card { flex:0 0 132px; padding:.85rem; border:1px solid #e0e9e5; border-radius:.85rem; background:linear-gradient(150deg,#f1f8f5,#fff); scroll-snap-align:start; }
+.forecast-day { font-size:.72rem; color:#607770; margin:0 0 .2rem; }
+.forecast-time { font-size:1rem; font-weight:700; margin:0; }
+.forecast-temperature { font-size:1.4rem; font-weight:750; margin:.7rem 0 .6rem; white-space:nowrap; }
+.forecast-temperature > span[aria-hidden] { font-size:1rem; }
+.forecast-unit { font-size:.85rem; font-weight:500; }
+.forecast-metric { font-size:.8rem; margin-top:.3rem; white-space:nowrap; }
+.forecast-gust { display:block; padding-left:1.3rem; color:#607770; font-size:.68rem; }
+.forecast-pressure { font-size:.67rem; color:#607770; margin-top:.5rem; }
+.forecast-expanded summary { color:#14665e; cursor:pointer; min-height:44px; padding:.7rem 0; font-weight:600; font-size:.9rem; }
+@media(min-width:992px) { .forecast-card { flex-basis:calc((100% - 4.55rem)/8); min-width:116px; padding:.7rem; } }

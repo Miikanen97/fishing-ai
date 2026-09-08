@@ -1,9 +1,11 @@
 from django.urls import path
 from . import views
+from .profile_views import settings_view
 from .assistant_views import assistant
 
 app_name = 'fishinglog'
 urlpatterns = [
+    path('asetukset/', settings_view, name='settings'),
     path('avustaja/', assistant, name='assistant'),
     path('saa/hae/', views.weather_lookup, name='weather_lookup'),
     path('', views.home, name='home'),

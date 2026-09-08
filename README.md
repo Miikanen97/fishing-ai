@@ -284,7 +284,7 @@ python manage.py assign_legacy_trips OMA_KAYTTAJANIMI
 
 Tarvittaessa lähdetilin voi antaa muodossa `--from-user fishingai_legacy_1`.
 Komento säilyttää reissujen saaliit, säätiedot ja koordinaatit.
-Omistajan poistaminen on estetty niin kauan kuin hänellä on reissuja.
+Tilin poistaminen poistaa myös omat reissut ja saaliit (migraatio 0009).
 
 
 ## Kalastusavustaja
@@ -397,3 +397,16 @@ Tarkistukset: `python manage.py test`, `python manage.py check`,
 Gunicorn on Railwayn Linux-palvelinta varten; Windows-kehityksessä käytetään runserveriä.
 Ohjeet: https://docs.railway.com/guides/django ja
 https://whitenoise.readthedocs.io/en/stable/django.html
+
+
+## Profiili ja käyttäjätilin hallinta
+
+`/profiili/` näyttää oman käyttäjänimen ja muokattavan sähköpostin. Käyttäjänimi säilyy.
+Djangon salasananvaihto `/profiili/salasana/` tarkistaa nykyisen salasanan ja säilyttää
+kirjautumisen. `/profiili/poista/` vaatii POST-lähetyksen, nykyisen salasanan sekä
+vahvistusruudun. Poisto hävittää tilin omat reissut, saaliit, kalastusprofiilin ja
+avustajan käyttölaskurin atomisesti. GET-pyyntö ei poista mitään.
+
+`/admin/` käyttää Django-authin ylläpito-oikeuksia. Kalastusmallien hallinta on rajattu
+superkäyttäjille, ja listoissa näkyvät omistajat. Käyttäjät ovat Djangon UserAdminissa.
+Ylläpitotunnuksen voi luoda palvelimen komentorivillä: `python manage.py createsuperuser`.

@@ -1,3 +1,4 @@
+from .home_weather import home_weather
 from django.contrib.auth.decorators import login_required
 from .forms import RegistrationForm
 from django.contrib import messages
@@ -31,7 +32,7 @@ def home(request):
     if not request.user.is_authenticated:
         return render(request, 'fishinglog/welcome.html')
     trips = Trip.objects.filter(owner=request.user).annotate(catch_count=Count('catches')).order_by('-date', '-start_time', '-pk')
-    return render(request, 'fishinglog/home.html', {'trips': trips[:5], 'trip_count': trips.count(), 'catch_count': Catch.objects.filter(trip__owner=request.user).count()})
+    return render(request, 'fishinglog/home.html', {'trips': trips[:5], 'trip_count': trips.count(), 'catch_count': Catch.objects.filter(trip__owner=request.user).count(), **home_weather(request.user)})
 
 
 @login_required

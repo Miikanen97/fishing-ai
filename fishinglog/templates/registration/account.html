@@ -1,0 +1,8 @@
+{% extends 'fishinglog/base.html' %}
+{% block title %}Profiili{% endblock %}
+{% block content %}<div class="row justify-content-center"><div class="col-12 col-md-8 col-lg-6">
+<h1>Profiili</h1><div class="card p-4 mb-3"><p>Käyttäjänimi: <strong>{{ user.username }}</strong></p>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit" class="btn btn-primary">Tallenna sähköposti</button></form>
+<div class="d-flex flex-wrap gap-3 mt-4"><a href="{% url 'password_change' %}">Vaihda salasana</a><a href="{% url 'fishinglog:settings' %}">Kalastusasetukset</a></div></div>
+<a class="btn btn-outline-danger" href="{% url 'delete_account' %}">Poista käyttäjätili</a>
+</div></div>{% endblock %}

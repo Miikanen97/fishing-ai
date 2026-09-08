@@ -1,0 +1,9 @@
+<article class="forecast-card">
+<p class="forecast-day">{{ row.target|date:'D d.m.' }}</p>
+<h3 class="forecast-time">{{ row.target|date:'H:i' }}</h3>
+<p class="forecast-temperature"><span aria-hidden="true">🌡️</span> <span class="visually-hidden">Lämpötila </span>{{ row.values.air_temperature|default_if_none:'–'|default:'–' }}<span class="forecast-unit"> °C</span></p>
+<div class="forecast-metric"><span aria-hidden="true">💨</span> <span class="visually-hidden">Tuuli </span>{{ row.values.wind_speed|default_if_none:'–'|default:'–' }} m/s{% if row.values.wind_gust != None and row.values.wind_gust != '' %}<span class="forecast-gust">puuskat {{ row.values.wind_gust }} m/s</span>{% endif %}</div>
+<div class="forecast-metric"><span aria-hidden="true">🌧️</span> <span class="visually-hidden">Sade </span>{{ row.values.precipitation|default_if_none:'–'|default:'–' }} mm/h</div>
+<div class="forecast-metric"><span aria-hidden="true">☁️</span> <span class="visually-hidden">Pilvisyys </span>{{ row.values.cloud_cover|default_if_none:'–'|default:'–' }} %</div>
+{% if row.values.air_pressure %}<div class="forecast-pressure">{{ row.values.air_pressure }} hPa</div>{% endif %}
+</article>

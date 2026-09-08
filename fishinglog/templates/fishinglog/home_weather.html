@@ -1,0 +1,19 @@
+<section class="card p-3 p-md-4 mb-4" aria-label="Oman paikan sää">
+{% if weather_profile.default_weather_place %}
+<div class="d-flex flex-wrap justify-content-between gap-2"><h2 class="h4">{{ weather_profile.default_weather_place }} · Lähiajan sää</h2><a href="{% url 'fishinglog:settings' %}">Vaihda paikkaa</a></div>
+{% if home_weather_error %}<p class="alert alert-warning mb-0" role="status">{{ home_weather_error }}</p>{% endif %}
+{% if home_forecast %}<p class="small text-secondary mb-3">Seuraavat 8 ajankohtaa · FMI · päivitetty {{ home_forecast.fetched_at|date:'d.m. H:i' }}. Ajat Suomen aikaa.</p>
+<div class="forecast-strip" tabindex="0" role="region" aria-label="Lähiajan sää, vieritä vaakasuunnassa">
+{% for row in home_forecast.rows|slice:':8' %}{% include 'fishinglog/weather_card.html' %}{% endfor %}
+</div>
+<details class="forecast-expanded mt-2">
+<summary>Näytä koko ennuste</summary>
+<p class="small text-secondary mt-2 mb-2">Kaikki saatavilla olevat ajankohdat seuraavilta noin 48 tunnilta.</p>
+<div class="forecast-strip" tabindex="0" role="region" aria-label="Koko 48 tunnin sääennuste, vieritä vaakasuunnassa">
+{% for row in home_forecast.rows %}{% include 'fishinglog/weather_card.html' %}{% endfor %}
+</div>
+</details>
+{% if home_forecast.missing_count %}<p class="small mt-2">Osasta ajankohtia ei saatu ennustetta.</p>{% endif %}
+{% endif %}
+{% else %}<h2 class="h4">Oman kalastuspaikan sää</h2><p>Valitse oletuspaikka, niin näet sen lähiajan sään täällä.</p><a class="btn btn-outline-primary align-self-start" href="{% url 'fishinglog:settings' %}">Aseta oma kalastuspaikka</a>{% endif %}
+</section>

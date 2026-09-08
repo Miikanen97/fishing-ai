@@ -1,0 +1,6 @@
+{% extends 'fishinglog/base.html' %}
+{% block title %}Poista käyttäjätili{% endblock %}
+{% block content %}<div class="row justify-content-center"><div class="col-12 col-md-8 col-lg-6"><div class="card p-4">
+<h1 class="h3">Poista käyttäjätili</h1><p class="alert alert-danger">Poistat tilin {{ user.username }}, sen {{ trip_count }} reissua saaliineen, kalastusasetukset ja avustajan käyttöhistorian. Poistoa ei voi perua.</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}<div class="d-flex flex-wrap gap-2"><button class="btn btn-danger" type="submit">Poista tilini pysyvästi</button><a class="btn btn-outline-secondary" href="{% url 'account' %}">Peruuta</a></div></form>
+</div></div></div>{% endblock %}

@@ -10,7 +10,7 @@ def measurement(label):
 
 
 class Trip(models.Model):
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='fishing_trips', verbose_name='Omistaja')
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='fishing_trips', verbose_name='Omistaja')
     date = models.DateField('Päivämäärä', default=timezone.localdate)
     lake = models.CharField('Järven nimi', max_length=150)
     location = models.CharField('Kalastuspaikka', max_length=200)
@@ -76,3 +76,10 @@ class AssistantUsage(models.Model):
     attempts = models.JSONField(default=list)
     version = models.PositiveIntegerField(default=0)
     busy_until = models.DateTimeField(null=True)
+
+
+class FishingProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='fishing_profile')
+    default_weather_place = models.CharField('Oletuskalastuspaikka', max_length=200, blank=True)
+    latitude = models.DecimalField('Leveysaste', max_digits=8, decimal_places=5, null=True, blank=True)
+    longitude = models.DecimalField('Pituusaste', max_digits=8, decimal_places=5, null=True, blank=True)

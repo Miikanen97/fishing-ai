@@ -1,4 +1,6 @@
 {% extends 'fishinglog/base.html' %}
+{% load static %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'fishinglog/home_weather.css' %}">{% endblock %}
 {% block content %}
 <section class="hero rounded-4 p-4 p-md-5 mb-4">
 <p class="text-uppercase small fw-bold">Kalastuspäiväkirja</p>
@@ -6,6 +8,7 @@
 <p class="lead mt-3">Kirjaa olosuhteet, tallenna saaliit ja palaa järven tunnelmiin.</p>
 <a class="btn btn-light mt-2" href="{% url 'fishinglog:trip_create' %}">+ Lisää kalastusreissu</a>
 </section>
+{% include 'fishinglog/home_weather.html' %}
 <div class="row g-3 mb-5">
 <div class="col-6"><div class="card p-4"><strong class="fs-2">{{ trip_count }}</strong><span class="text-secondary">Kalastusreissua</span></div></div>
 <div class="col-6"><div class="card p-4"><strong class="fs-2">{{ catch_count }}</strong><span class="text-secondary">Saalista</span></div></div>

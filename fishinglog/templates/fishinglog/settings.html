@@ -1,0 +1,7 @@
+{% extends 'fishinglog/base.html' %}
+{% block title %}Asetukset{% endblock %}
+{% block content %}<div class="row justify-content-center"><div class="col-12 col-md-8 col-lg-6"><h1>Asetukset</h1>
+<div class="card p-4"><h2 class="h5">Oma kalastuspaikka</h2><p>Etusivun lähiajan sää haetaan automaattisesti tästä paikasta.</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">Tallenna asetukset</button></form>
+{% if profile.latitude != None and profile.longitude != None %}<p class="small text-secondary mt-3 mb-0">Paikan koordinaatit: {{ profile.latitude }}, {{ profile.longitude }}. Paikannuksen edustava piste, ei reissun tarkka kalastuspaikka.</p>{% endif %}
+</div></div></div>{% endblock %}
