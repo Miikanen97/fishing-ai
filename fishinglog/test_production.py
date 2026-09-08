@@ -52,3 +52,23 @@ class ProductionSettingsTests(SimpleTestCase):
         response = Client().get('/kirjaudu/', HTTP_HOST='app.up.railway.app', HTTP_X_FORWARDED_PROTO='https')
         self.assertEqual(response.status_code,200)
         self.assertEqual(Client().get('/kirjaudu/', HTTP_HOST='app.up.railway.app').status_code,301)
+
+
+    def test_debug_false_values_in_production(self):
+        for value in ('False', 'false', '0', 'no', 'off', 'FALSE', ' Off '):
+            with self.subTest(value=value):
+                self.assertIs(self.load({**PROD, 'DEBUG': value})['DEBUG'], False)
+
+    def test_debug_true_values_in_development_and_rejected_in_production(self):
+        for value in ('True', 'true', '1', 'yes', 'on', 'TRUE', ' On '):
+            with self.subTest(value=value):
+                self.assertIs(self.load({'DJANGO_ENV': 'development', 'DEBUG': value})['DEBUG'], True)
+                with self.assertRaisesMessage(ImproperlyConfigured, 'DEBUG ei saa olla True tuotannossa.'):
+                    self.load({**PROD, 'DEBUG': value})
+
+    def test_debug_defaults_and_invalid_values(self):
+        self.assertIs(self.load({})['DEBUG'], True)
+        self.assertIs(self.load({k: v for k, v in PROD.items() if k != 'DEBUG'})['DEBUG'], False)
+        for value in ('', 'maybe', '2', '"False"'):
+            with self.subTest(value=value), self.assertRaises(ImproperlyConfigured):
+                self.load({**PROD, 'DEBUG': value})

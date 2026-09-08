@@ -24,9 +24,9 @@ import dj_database_url
 
 def env_bool(name, default=False):
     value = os.environ.get(name, str(default)).strip().lower()
-    if value not in ('true', 'false', '1', '0', 'yes', 'no'):
+    if value not in ('true', 'false', '1', '0', 'yes', 'no', 'on', 'off'):
         raise ImproperlyConfigured(f'{name}: käytä arvoa True tai False.')
-    return value in ('true', '1', 'yes')
+    return value in ('true', '1', 'yes', 'on')
 
 
 def env_list(name, default=''):
