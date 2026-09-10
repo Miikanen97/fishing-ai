@@ -3,10 +3,11 @@ test('map selection, dragging and opt-in geolocation with denied permission',()=
  const events={},markers=[],tiles=[]; let calls=0,fail,success;
  const element=()=>({value:'',textContent:'',addEventListener(name,fn){this[name]=fn;},appendChild(){}});
  const nodes=Object.fromEntries(['spots-map','spots-status','id_latitude','id_longitude','spots-data','spots-locate','spot-editor'].map(id=>[id,element()]));
+ nodes['spots-map'].dataset={iconUrl:'/static/marker-icon.abc.png',iconRetinaUrl:'/static/marker-icon-2x.def.png',shadowUrl:'/static/marker-shadow.ghi.png'};
  nodes['spots-data'].textContent=JSON.stringify([{name:'Testipaikka',notes:'',latitude:'60',longitude:'24',edit_url:'/edit/',delete_url:'/delete/'}]);
  const link=element(); link.dataset={spotIndex:'0'}; nodes['spots-map'].scrollIntoView=()=>{};
  const map={setView(point){this.center=point;return this;},on(name,fn){events[name]=fn;},fitBounds(){}};
- const L={map:()=>map,tileLayer:(url,options)=>{const tile={url,options,addTo(){this.active=true;return this;},on(name,fn){this[name]=fn;}};tiles.push(tile);return tile;},marker(point){const marker={point,bindPopup(){return this;},openPopup(){this.opened=true;},addTo(){return this;},on(name,fn){this[name]=fn;},setLatLng(p){this.point=p;},getLatLng(){return {lat:this.point[0],lng:this.point[1]};}};markers.push(marker);return marker;},circleMarker(){return {addTo(){return this;},setLatLng(){}};}};
+ const L={icon:options=>options,map:()=>map,tileLayer:(url,options)=>{const tile={url,options,addTo(){this.active=true;return this;},on(name,fn){this[name]=fn;}};tiles.push(tile);return tile;},marker(point,options){const marker={point,options,bindPopup(){return this;},openPopup(){this.opened=true;},addTo(){return this;},on(name,fn){this[name]=fn;},setLatLng(p){this.point=p;},getLatLng(){return {lat:this.point[0],lng:this.point[1]};}};markers.push(marker);return marker;},circleMarker(){return {addTo(){return this;},setLatLng(){}};}};
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../static/fishinglog/spots.js'),'utf8'),{window:{L},L,document:{getElementById:id=>nodes[id],createElement:element,querySelectorAll:()=>[link]},navigator:{geolocation:{getCurrentPosition(ok,no){calls++;success=ok;fail=no;}}}});
  assert.equal(calls,0);
  assert.equal(tiles.length,1);
@@ -19,6 +20,11 @@ test('map selection, dragging and opt-in geolocation with denied permission',()=
  events.click({latlng:{lat:62,lng:26}});
  assert.equal(nodes.id_latitude.value,'62.00000');
  assert.equal(nodes['spot-editor'].open,true);
+ assert.equal(markers[0].options.icon,markers[1].options.icon);
+ assert.equal(markers[0].options.icon.iconUrl,nodes['spots-map'].dataset.iconUrl);
+ assert.equal(markers[0].options.icon.iconRetinaUrl,nodes['spots-map'].dataset.iconRetinaUrl);
+ assert.equal(markers[0].options.icon.shadowUrl,nodes['spots-map'].dataset.shadowUrl);
+ assert.equal(markers[1].options.draggable,true);
  markers[1].point=[63,27];markers[1].dragend();assert.equal(nodes.id_longitude.value,'27.00000');
  nodes['spots-locate'].click();assert.equal(calls,1);fail();assert.equal(nodes['spots-locate'].disabled,false);
  events.click({latlng:{lat:61,lng:25}});assert.equal(nodes.id_latitude.value,'61.00000');

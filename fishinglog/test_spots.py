@@ -50,3 +50,37 @@ class SpotTests(TestCase):
         FishingSpot.objects.create(user=self.user,**self.data)
         self.user.delete()
         self.assertEqual(FishingSpot.objects.count(),1)
+
+
+class SpotProductionIconTests(TestCase):
+    def test_manifest_icons_are_rendered_and_served_by_whitenoise(self):
+        from tempfile import TemporaryDirectory
+        from django.conf import settings
+        from django.core.management import call_command
+        from django.contrib.staticfiles.storage import staticfiles_storage
+        from django.test import override_settings
+
+        with TemporaryDirectory() as root, override_settings(
+            DEBUG=False, STATIC_ROOT=root, SECURE_SSL_REDIRECT=False,
+            STORAGES={**settings.STORAGES, 'staticfiles': {
+                'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'}},
+            WHITENOISE_AUTOREFRESH=False, WHITENOISE_USE_FINDERS=False,
+        ):
+            call_command('collectstatic', interactive=False, verbosity=0)
+            user = get_user_model().objects.create_user('production-icons')
+            client = Client()
+            client.force_login(user)
+            response = client.get(reverse('fishinglog:spots'))
+            self.assertEqual(response.status_code, 200)
+            for filename, attribute in (
+                ('marker-icon.png', 'icon-url'),
+                ('marker-icon-2x.png', 'icon-retina-url'),
+                ('marker-shadow.png', 'shadow-url'),
+            ):
+                url = staticfiles_storage.url('fishinglog/leaflet/images/' + filename)
+                self.assertRegex(url, r'\.[a-f0-9]{12}\.png$')
+                self.assertContains(response, f'data-{attribute}="{url}"')
+                image = client.get(url)
+                self.assertEqual(image.status_code, 200)
+                self.assertEqual(image['Content-Type'], 'image/png')
+                self.assertTrue(b''.join(image.streaming_content).startswith(b'\x89PNG\r\n\x1a\n'))

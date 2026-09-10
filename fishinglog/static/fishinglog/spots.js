@@ -4,6 +4,13 @@
   const status = document.getElementById('spots-status');
   if (!window.L) { status.textContent = 'Karttaa ei saatu ladattua. Voit silti syöttää koordinaatit lomakkeeseen.'; return; }
   const map = L.map(node).setView([62, 26], 6);
+  // Django resolves manifest-hashed URLs; bypass Leaflet's CSS path detection.
+  const spotIcon = L.icon({
+    iconUrl: node.dataset.iconUrl, iconRetinaUrl: node.dataset.iconRetinaUrl,
+    shadowUrl: node.dataset.shadowUrl,
+    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34],
+    tooltipAnchor: [16, -28], shadowSize: [41, 41]
+  });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
@@ -12,7 +19,7 @@
   function setPoint(a, b) {
     lat.value = a.toFixed(5); lon.value = b.toFixed(5);
     if (!selected) {
-      selected = L.marker([a,b], {draggable:true}).addTo(map);
+      selected = L.marker([a,b], {draggable:true, icon:spotIcon}).addTo(map);
       selected.on('dragend', () => { const point = selected.getLatLng(); setPoint(point.lat, point.lng); });
     } else selected.setLatLng([a,b]);
     status.textContent = 'Valittu piste: ' + lat.value + ', ' + lon.value;
@@ -33,7 +40,7 @@
     [['Muokkaa',item.edit_url],['Poista',item.delete_url]].forEach(([label,url]) => {
       const link = document.createElement('a'); link.textContent = label; link.href = url; link.className = 'me-3'; popup.appendChild(link);
     });
-    savedMarkers.push(L.marker(point).addTo(map).bindPopup(popup));
+    savedMarkers.push(L.marker(point, {icon:spotIcon}).addTo(map).bindPopup(popup));
   });
   if (points.length) map.fitBounds(points, {padding:[35,35], maxZoom:13});
   readPoint();
