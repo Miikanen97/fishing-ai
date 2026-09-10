@@ -1,0 +1,12 @@
+#spots-map { height: min(65vh, 620px); min-height: 360px; border-radius: 1rem; z-index: 0; }
+.spot-popup-notes { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 160px; overflow-y: auto; }
+@media(max-width:575px) { #spots-map { height: 55vh; min-height: 320px; } }
+
+.spot-editor summary { padding:.8rem 1rem; cursor:pointer; font-weight:600; }
+.spot-editor textarea { height:70px; min-height:46px; }
+.spot-editor input[type=number] { min-height:36px; font-size:.8rem; color:#607770; }
+.spot-list-info { min-width:0; flex:1 1 180px; }
+.spot-list-notes { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+.spot-focus { display:inline-block; padding:.35rem 0; }
+.spot-list-actions a { display:inline-flex; align-items:center; min-height:44px; }
+.spot-list .list-group-item { padding:.5rem 1rem; }

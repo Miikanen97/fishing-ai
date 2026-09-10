@@ -30,6 +30,7 @@
 
 {% if user.is_authenticated %}
 <a class="nav-link" href="{% url 'fishinglog:home' %}">Etusivu</a>
+<a class="nav-link" href="{% url 'fishinglog:spots' %}">Kalapaikat</a>
 <a class="nav-link" href="{% url 'fishinglog:trip_list' %}">Reissut</a>
 <a class="nav-link" href="{% url 'fishinglog:assistant' %}">Kalastusavustaja</a>
 <a class="nav-link" href="{% url 'fishinglog:settings' %}">Asetukset</a>

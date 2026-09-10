@@ -1,0 +1,24 @@
+{% extends 'fishinglog/base.html' %}{% load static %}
+{% block title %}Kalapaikat{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'fishinglog/leaflet/leaflet.css' %}"><link rel="stylesheet" href="{% static 'fishinglog/spots.css' %}">
+<script defer src="{% static 'fishinglog/leaflet/leaflet.js' %}"></script><script defer src="{% static 'fishinglog/spots.js' %}"></script>{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><h1 class="mb-0">Omat kalapaikat</h1><button type="button" id="spots-locate" class="btn btn-outline-primary">Näytä sijaintini</button></div>
+<p class="small text-secondary mb-3">Lisää paikka napauttamalla karttaa. Avaa tallennetun paikan tiedot merkistä tai listan nimestä.</p>
+<div id="spots-map" role="region" aria-label="Omat kalapaikat kartalla"></div>
+<p id="spots-status" role="status" class="small text-secondary mt-2 mb-2">Valitse piste kartalta tai avaa lomake syöttääksesi koordinaatit.</p>
+{{ spots|json_script:'spots-data' }}
+<details id="spot-editor" class="card spot-editor mb-3" {% if spot or form.is_bound %}open{% endif %}>
+<summary>{% if spot %}Muokkaa kalapaikkaa{% else %}Lisää kalapaikka{% endif %}</summary>
+<form method="post" class="px-3 pb-3">{% csrf_token %}{{ form.non_field_errors }}
+<div class="row g-2"><div class="col-12 col-md-5"><label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>{{ form.name }}{{ form.name.errors }}</div>
+<div class="col-12 col-md-7"><label class="form-label" for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>{{ form.notes }}{{ form.notes.errors }}</div>
+<div class="col-6 text-secondary small"><label for="{{ form.latitude.id_for_label }}">{{ form.latitude.label }}</label>{{ form.latitude }}{{ form.latitude.errors }}</div>
+<div class="col-6 text-secondary small"><label for="{{ form.longitude.id_for_label }}">{{ form.longitude.label }}</label>{{ form.longitude }}{{ form.longitude.errors }}</div></div>
+<div class="d-flex flex-wrap gap-2 mt-3"><button class="btn btn-primary" type="submit">Tallenna paikka</button>{% if spot %}<a class="btn btn-outline-secondary" href="{% url 'fishinglog:spots' %}">Peruuta muokkaus</a>{% endif %}</div></form></details>
+<section aria-label="Tallennetut kalapaikat"><h2 class="h5">Tallennetut paikat <span class="text-secondary fw-normal">({{ spots|length }})</span></h2>
+<ul class="list-group spot-list">{% for item in spots %}<li class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2">
+<div class="spot-list-info"><a class="spot-focus fw-semibold" href="#spots-map" data-spot-index="{{ forloop.counter0 }}">{{ item.name }}</a><div class="small text-secondary">{{ item.latitude }}, {{ item.longitude }}</div>{% if item.notes %}<p class="spot-list-notes small text-secondary mb-0">{{ item.notes }}</p>{% endif %}</div>
+<div class="d-flex gap-3 spot-list-actions"><a href="{{ item.edit_url }}">Muokkaa</a><a href="{{ item.delete_url }}">Poista</a></div>
+</li>{% empty %}<li class="list-group-item text-secondary">Ei vielä paikkoja. Aloita napauttamalla karttaa.</li>{% endfor %}</ul></section>
+{% endblock %}

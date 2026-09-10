@@ -83,3 +83,18 @@ class FishingProfile(models.Model):
     default_weather_place = models.CharField('Oletuskalastuspaikka', max_length=200, blank=True)
     latitude = models.DecimalField('Leveysaste', max_digits=8, decimal_places=5, null=True, blank=True)
     longitude = models.DecimalField('Pituusaste', max_digits=8, decimal_places=5, null=True, blank=True)
+
+
+class FishingSpot(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='fishing_spots')
+    name = models.CharField('Paikan nimi', max_length=150)
+    latitude = models.DecimalField('Leveysaste', max_digits=8, decimal_places=5, validators=[MinValueValidator(-90), MaxValueValidator(90)])
+    longitude = models.DecimalField('Pituusaste', max_digits=8, decimal_places=5, validators=[MinValueValidator(-180), MaxValueValidator(180)])
+    notes = models.TextField('Muistiinpanot', blank=True)
+    created_at = models.DateTimeField('Luotu', auto_now_add=True)
+
+    class Meta:
+        ordering = ['name', 'pk']
+
+    def __str__(self):
+        return self.name

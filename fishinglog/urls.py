@@ -1,10 +1,14 @@
 from django.urls import path
 from . import views
+from .spot_views import spots, delete_spot
 from .profile_views import settings_view
 from .assistant_views import assistant
 
 app_name = 'fishinglog'
 urlpatterns = [
+    path('kalapaikat/', spots, name='spots'),
+    path('kalapaikat/<int:pk>/muokkaa/', spots, name='spot_update'),
+    path('kalapaikat/<int:pk>/poista/', delete_spot, name='spot_delete'),
     path('asetukset/', settings_view, name='settings'),
     path('avustaja/', assistant, name='assistant'),
     path('saa/hae/', views.weather_lookup, name='weather_lookup'),

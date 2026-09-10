@@ -1,0 +1,27 @@
+const test=require('node:test'), assert=require('node:assert/strict'), vm=require('node:vm'), fs=require('node:fs'), path=require('node:path');
+test('map selection, dragging and opt-in geolocation with denied permission',()=>{
+ const events={},markers=[],tiles=[]; let calls=0,fail,success;
+ const element=()=>({value:'',textContent:'',addEventListener(name,fn){this[name]=fn;},appendChild(){}});
+ const nodes=Object.fromEntries(['spots-map','spots-status','id_latitude','id_longitude','spots-data','spots-locate','spot-editor'].map(id=>[id,element()]));
+ nodes['spots-data'].textContent=JSON.stringify([{name:'Testipaikka',notes:'',latitude:'60',longitude:'24',edit_url:'/edit/',delete_url:'/delete/'}]);
+ const link=element(); link.dataset={spotIndex:'0'}; nodes['spots-map'].scrollIntoView=()=>{};
+ const map={setView(point){this.center=point;return this;},on(name,fn){events[name]=fn;},fitBounds(){}};
+ const L={map:()=>map,tileLayer:(url,options)=>{const tile={url,options,addTo(){this.active=true;return this;},on(name,fn){this[name]=fn;}};tiles.push(tile);return tile;},marker(point){const marker={point,bindPopup(){return this;},openPopup(){this.opened=true;},addTo(){return this;},on(name,fn){this[name]=fn;},setLatLng(p){this.point=p;},getLatLng(){return {lat:this.point[0],lng:this.point[1]};}};markers.push(marker);return marker;},circleMarker(){return {addTo(){return this;},setLatLng(){}};}};
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../static/fishinglog/spots.js'),'utf8'),{window:{L},L,document:{getElementById:id=>nodes[id],createElement:element,querySelectorAll:()=>[link]},navigator:{geolocation:{getCurrentPosition(ok,no){calls++;success=ok;fail=no;}}}});
+ assert.equal(calls,0);
+ assert.equal(tiles.length,1);
+ assert.equal(tiles[0].active,true);
+ assert.equal(tiles[0].url,'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+ assert.match(tiles[0].options.attribution,/OpenStreetMap/);
+ let prevented=false; link.click({preventDefault(){prevented=true;}});
+ assert.equal(prevented,true); assert.equal(markers[0].opened,true); assert.equal(map.center[0],60);
+ assert.equal(nodes.id_latitude.value,'');
+ events.click({latlng:{lat:62,lng:26}});
+ assert.equal(nodes.id_latitude.value,'62.00000');
+ assert.equal(nodes['spot-editor'].open,true);
+ markers[1].point=[63,27];markers[1].dragend();assert.equal(nodes.id_longitude.value,'27.00000');
+ nodes['spots-locate'].click();assert.equal(calls,1);fail();assert.equal(nodes['spots-locate'].disabled,false);
+ events.click({latlng:{lat:61,lng:25}});assert.equal(nodes.id_latitude.value,'61.00000');
+ nodes['spots-locate'].click();success({coords:{latitude:60,longitude:24}});
+ assert.equal(nodes.id_latitude.value,'61.00000');
+});
