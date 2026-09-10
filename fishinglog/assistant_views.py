@@ -4,6 +4,7 @@ from django.shortcuts import render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 from .forms import AssistantForm
+from .assistant_presentation import answer_summary
 from .assistant import advise, AssistantError, api_key_configured
 
 
@@ -23,4 +24,4 @@ def assistant(request):
         finally:
             if reservation is not None:
                 release(reservation)
-    return render(request, 'fishinglog/assistant.html', {'form': form, 'result': result, 'api_key_configured': api_key_configured()})
+    return render(request, 'fishinglog/assistant.html', {'form': form, 'result': result, 'summary': answer_summary(result), 'api_key_configured': api_key_configured()})

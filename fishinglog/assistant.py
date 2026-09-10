@@ -289,6 +289,6 @@ def advise(user, question, selected_place='', before_send=None):
         answer['uncertainty'] += ' Paikkakohtaista historiaa on vähän: mukana on alle viisi reissua kustakin paikasta.'
     if warning:
         answer.update(score=None, best_time='Ei arvioitavissa', recommendation='Lähtösuositusta ei voida vahvistaa ilman säätietoja.')
-    return {'answer': answer, 'place': place, 'place_source': place_source, 'warning': warning,
+    return {'spot_history_summary': [{'name': spot['name'], 'included_trips': spot['included_trips'], 'total_trips': spot['total_trips']} for spot in saved_spots['places']], 'spot_forecasts': spot_forecasts, 'answer': answer, 'place': place, 'place_source': place_source, 'warning': warning,
             'history_count': history['included_trips'], 'history_total': history['total_trips'],
             'samples': samples, 'missing_count': len(missing), 'fetched_at': now}
