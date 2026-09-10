@@ -4,8 +4,11 @@ from .spot_views import spots, delete_spot
 from .profile_views import settings_view
 from .assistant_views import assistant
 
+from .statistics import statistics
+
 app_name = 'fishinglog'
 urlpatterns = [
+    path('tilastot/', statistics, name='statistics'),
     path('kalapaikat/', spots, name='spots'),
     path('kalapaikat/<int:pk>/muokkaa/', spots, name='spot_update'),
     path('kalapaikat/<int:pk>/poista/', delete_spot, name='spot_delete'),

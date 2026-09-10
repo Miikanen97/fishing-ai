@@ -131,7 +131,10 @@ class LoginForm(AuthStyleMixin, AuthenticationForm):
 
 
 class RegistrationForm(AuthStyleMixin, UserCreationForm):
-    pass
+    email = forms.EmailField(label='Sähköposti', required=False)
+
+    class Meta(UserCreationForm.Meta):
+        fields = ('username', 'email')
 
 
 class AssistantForm(forms.Form):

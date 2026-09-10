@@ -1,0 +1,24 @@
+{% extends 'fishinglog/base.html' %}
+{% block title %}Tilastot{% endblock %}
+{% block content %}<h1>Tilastot</h1><p class="text-secondary">Oma kalastushistoriasi</p>
+{% if total < 5 %}<p class="alert alert-info">Havaintoja on vielä vähän. Tilastot kuvaavat kirjauksiasi, eivät varmaa ennustetta kalansaannista.</p>{% endif %}
+<div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-2 mb-3">
+<div class="col"><div class="card p-3 h-100">Reissuja yhteensä<strong class="fs-3">{{ total }}</strong></div></div>
+<div class="col"><div class="card p-3 h-100">Saaliita yhteensä<strong class="fs-3">{{ fish_total }}</strong></div></div>
+<div class="col"><div class="card p-3 h-100">Saalista tuottaneita reissuja<strong class="fs-3">{{ productive }}</strong></div></div>
+<div class="col"><div class="card p-3 h-100">Saaliittomia reissuja<strong class="fs-3">{{ empty }}</strong></div></div>
+<div class="col"><div class="card p-3 h-100">Ei saalistietoa<strong class="fs-3">{{ unknown }}</strong></div></div></div>
+<p class="small text-secondary">Saaliittomiksi lasketaan vain erikseen merkityt reissut. Saalistieto puuttuu {{ unknown }} reissulta.</p>
+<div class="row g-3"><section class="col-12 col-lg-6"><div class="card p-3 h-100"><h2 class="h5">Kalalajit</h2>{% include 'fishinglog/stat_bars.html' with rows=species %}</div></section>
+<section class="col-12 col-lg-6"><div class="card p-3 h-100"><h2 class="h5">Saaliit kellonajoittain</h2>{% include 'fishinglog/stat_bars.html' with rows=periods %}<p class="small text-secondary">Aikavälin alku kuuluu ryhmään, loppu seuraavaan. Tämä ei mittaa kalastukseen käytettyä aikaa.</p></div></section></div>
+<section class="card p-3 mt-3"><h2 class="h5">🏆 Kaikkien aikojen ennätykset</h2>
+<div class="row g-2 mb-3">
+<div class="col-12 col-sm-6"><div class="bg-light border rounded p-3 h-100"><h3 class="h6 text-secondary">Painavin kala</h3>{% if overall.heaviest %}<p class="fw-semibold mb-1">{{ overall.heaviest.species }}</p><p class="fs-2 fw-bold mb-0">{{ overall.heaviest.weight|floatformat:'-3' }} <span class="fs-6">kg</span></p>{% if overall.heaviest.length %}<p class="small mb-0">Pituus {{ overall.heaviest.length|floatformat:'-3' }} m</p>{% endif %}{% else %}<p class="mb-0">Ei painotietoja</p>{% endif %}</div></div>
+<div class="col-12 col-sm-6"><div class="bg-light border rounded p-3 h-100"><h3 class="h6 text-secondary">Pisin kala</h3>{% if overall.longest %}<p class="fw-semibold mb-1">{{ overall.longest.species }}</p><p class="fs-2 fw-bold mb-0">{{ overall.longest.length|floatformat:'-3' }} <span class="fs-6">m</span></p>{% if overall.longest.weight %}<p class="small mb-0">Paino {{ overall.longest.weight|floatformat:'-3' }} kg</p>{% endif %}{% else %}<p class="mb-0">Ei pituustietoja</p>{% endif %}</div></div>
+</div>
+{% if overall.heaviest and overall.longest %}<p class="small text-secondary">{% if overall.heaviest.pk == overall.longest.pk %}Sama kala pitää hallussaan molempia ennätyksiä.{% else %}Paino- ja pituusennätys kuuluvat eri kaloille.{% endif %}</p>{% endif %}
+<h3 class="h6">Ennätykset lajeittain</h3>
+<ul class="list-group list-group-flush">{% for row in records %}<li class="list-group-item px-0"><strong>{{ row.name }}</strong> · painavin {{ row.heaviest.weight|default_if_none:'–'|default:'–' }} kg · pisin {{ row.longest.length|default_if_none:'–'|default:'–' }} m</li>{% empty %}<li class="list-group-item">Ei vielä saaliita.</li>{% endfor %}</ul><p class="small text-secondary mt-2 mb-0">Paino- ja pituusennätys voivat kuulua eri kaloille.</p></section>
+<section class="card p-3 mt-3"><h2 class="h5">Kalapaikat saalismäärän mukaan</h2><p class="small text-secondary">Vain paikkaan linkitetyt omat reissut. Suuri saalismäärä ei yksin osoita parasta paikkaa.</p><ul class="list-group list-group-flush">{% for spot in spots %}<li class="list-group-item px-0"><strong>{{ spot.name }}</strong> · {{ spot.count }} saalista / {{ spot.trips }} reissua{% if spot.trips < 5 %}<span class="d-block small text-secondary">Pieni otos</span>{% endif %}</li>{% empty %}<li class="list-group-item">Ei vielä kalapaikkoja, joihin on linkitetty omia reissuja.</li>{% endfor %}</ul></section>
+<section class="card p-3 mt-3"><h2 class="h5">Vieheet ja värit</h2>{% include 'fishinglog/stat_bars.html' with rows=lures %}<p class="small text-secondary mb-0">Näytetään saaliiden määrät. Vieheiden kaikkia käyttökertoja ei ole tallennettu, joten käyttömäärää tai saalisprosenttia ei voida laskea luotettavasti.</p></section>
+{% endblock %}
