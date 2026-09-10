@@ -7,11 +7,11 @@ function setup({point=null,editable=true,leaflet=true}={}) {
  const item=value=>({value,events:{},textContent:'',addEventListener(n,fn){this.events[n]=fn;},dispatchEvent(e){this.events[e.type]?.(e);}});
  const fields={latitude:item(point?.[0]??''),longitude:item(point?.[1]??''),weather_latitude:item('62'),weather_longitude:item('26')};
  const form={elements:{namedItem:n=>fields[n]},events:{},addEventListener(n,fn){this.events[n]=fn;}};
- const element={dataset:{editable:String(editable),latitude:point?.[0]??'',longitude:point?.[1]??''},closest:()=>form};
+ const element={dataset:{iconUrl:'/static/icon.abc.png',iconRetinaUrl:'/static/icon2.def.png',shadowUrl:'/static/shadow.ghi.png',editable:String(editable),latitude:point?.[0]??'',longitude:point?.[1]??''},closest:()=>form};
  const ui={'fishing-map':element,'map-status':item(''),'clear-location':item(''),'locate-me':item('')};
  let marker=null,geoSuccess,geoError,geoCalls=0;
  const map={events:{},setView(p,z){this.center=p;return this;},panTo(p){this.center=p;},on(n,fn){this.events[n]=fn;return this;},removeLayer(){marker=null;}};
- const L={map:()=>map,tileLayer:()=>({on(){return this;},addTo(){return this;}}),marker:(point,options)=>{
+ const L={icon:options=>options,map:()=>map,tileLayer:()=>({on(){return this;},addTo(){return this;}}),marker:(point,options)=>{
    marker={point,options,events:{},addTo(){return this;},on(n,fn){this.events[n]=fn;return this;},setLatLng(p){this.point=p;return this;},getLatLng(){return {lat:this.point[0],lng:this.point[1]};}};return marker;}};
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../static/fishinglog/map.js'),'utf8'),{
    document:{getElementById:n=>ui[n]},window:{L:leaflet?L:undefined},L,Event,
@@ -59,3 +59,14 @@ test('missing Leaflet produces a helpful error',()=>{
 });
 
 
+
+test('new, existing and read-only markers use explicit static icon URLs',()=>{
+ for (const options of [{}, {point:[62,27]}, {point:[62,27],editable:false}]) {
+  const app=setup(options);
+  if (!app.marker) app.map.events.click({latlng:{lat:62,lng:27}});
+  assert.equal(app.marker.options.icon.iconUrl,'/static/icon.abc.png');
+  assert.equal(app.marker.options.icon.iconRetinaUrl,'/static/icon2.def.png');
+  assert.equal(app.marker.options.icon.shadowUrl,'/static/shadow.ghi.png');
+  assert.deepEqual(Array.from(app.marker.options.icon.iconAnchor),[12,41]);
+ }
+});

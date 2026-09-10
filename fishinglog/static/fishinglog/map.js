@@ -18,6 +18,13 @@
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).on('tileerror', () => { status.textContent = 'Karttapohjaa ei saatu ladattua. Tarkista verkkoyhteys. Koordinaatit voi silti tallentaa.'; }).addTo(map);
+  // Explicit Django static URLs also work with WhiteNoise manifest hashes.
+  const markerIcon = L.icon({
+    iconUrl: element.dataset.iconUrl, iconRetinaUrl: element.dataset.iconRetinaUrl,
+    shadowUrl: element.dataset.shadowUrl,
+    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34],
+    tooltipAnchor: [16, -28], shadowSize: [41, 41]
+  });
   let marker, locationRequest = 0;
   function show(point, pan = true) {
     if (!point) {
@@ -26,7 +33,7 @@
       return;
     }
     if (!marker) {
-      marker = L.marker(point, {draggable:editable, title:'Kalastuspaikka', alt:'Kalastuspaikka'}).addTo(map);
+      marker = L.marker(point, {icon:markerIcon, draggable:editable, title:'Kalastuspaikka', alt:'Kalastuspaikka'}).addTo(map);
       if (editable) marker.on('dragend', () => { const p=marker.getLatLng(); choose([p.lat,p.lng]); });
     } else marker.setLatLng(point);
     if (pan) map.panTo(point);

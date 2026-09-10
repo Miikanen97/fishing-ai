@@ -1,5 +1,5 @@
 {% extends 'fishinglog/base.html' %}
-{% load l10n %}
+{% load l10n static %}
 {% block extra_head %}{% if trip.latitude != None and trip.longitude != None %}{% include 'fishinglog/map_assets.html' %}{% endif %}{% endblock %}
 {% block title %}{{ trip.lake }}{% endblock %}
 {% block content %}
@@ -11,7 +11,7 @@
 <section class="card p-3 mb-4"><h2 class="h5">Kalastuspaikka</h2>
 {% if trip.fishing_spot %}<p>Tallennettu kalapaikka: <a href="{% url 'fishinglog:spots' %}?spot={{ trip.fishing_spot_id|unlocalize }}">{{ trip.fishing_spot.name }} – Avaa Kalapaikat-kartalla</a></p>{% endif %}
 {% if trip.latitude != None and trip.longitude != None %}
-<div id="fishing-map" class="fishing-map fishing-map-small" data-latitude="{{ trip.latitude|unlocalize }}" data-longitude="{{ trip.longitude|unlocalize }}" role="region" aria-label="Kalastuspaikka kartalla"></div>
+<div id="fishing-map" data-icon-url="{% static 'fishinglog/leaflet/images/marker-icon.png' %}" data-icon-retina-url="{% static 'fishinglog/leaflet/images/marker-icon-2x.png' %}" data-shadow-url="{% static 'fishinglog/leaflet/images/marker-shadow.png' %}" class="fishing-map fishing-map-small" data-latitude="{{ trip.latitude|unlocalize }}" data-longitude="{{ trip.longitude|unlocalize }}" role="region" aria-label="Kalastuspaikka kartalla"></div>
 <p id="map-status" class="small mt-2" role="status">Koordinaatit: {{ trip.latitude }}, {{ trip.longitude }}</p>
 <a href="https://www.openstreetmap.org/?mlat={{ trip.latitude|unlocalize }}&amp;mlon={{ trip.longitude|unlocalize }}#map=15/{{ trip.latitude|unlocalize }}/{{ trip.longitude|unlocalize }}" target="_blank" rel="noopener" class="btn btn-outline-primary align-self-start">Avaa kartalla</a>
 {% else %}<p class="text-secondary mb-0">Tarkkaa kalastuspaikkaa ei ole valittu. Voit valita sen muokkaamalla reissua.</p>{% endif %}</section>

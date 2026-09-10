@@ -72,6 +72,11 @@ class SpotProductionIconTests(TestCase):
             client.force_login(user)
             response = client.get(reverse('fishinglog:spots'))
             self.assertEqual(response.status_code, 200)
+            from .models import Trip
+            trip = Trip.objects.create(owner=user, date='2026-09-10', lake='Testi', location='Paikka', start_time='08:00', end_time='10:00', latitude=62, longitude=26)
+            trip_pages = [client.get(reverse('fishinglog:trip_create')),
+                          client.get(reverse('fishinglog:trip_update', args=[trip.pk])),
+                          client.get(trip.get_absolute_url())]
             for filename, attribute in (
                 ('marker-icon.png', 'icon-url'),
                 ('marker-icon-2x.png', 'icon-retina-url'),
@@ -80,6 +85,8 @@ class SpotProductionIconTests(TestCase):
                 url = staticfiles_storage.url('fishinglog/leaflet/images/' + filename)
                 self.assertRegex(url, r'\.[a-f0-9]{12}\.png$')
                 self.assertContains(response, f'data-{attribute}="{url}"')
+                for page in trip_pages:
+                    self.assertContains(page, f'data-{attribute}="{url}"')
                 image = client.get(url)
                 self.assertEqual(image.status_code, 200)
                 self.assertEqual(image['Content-Type'], 'image/png')
