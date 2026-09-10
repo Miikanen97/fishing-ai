@@ -152,7 +152,10 @@ def choose_place(user, plan, selected):
         return '', 'Paikka puuttuu'
     if trip.latitude is not None and trip.longitude is not None:
         return f'{trip.latitude},{trip.longitude}', f'Viimeisin sopiva reissu: {trip.lake}, {trip.location}'
-    return trip.weather_place or trip.lake or trip.location, f'Viimeisin sopiva reissu: {trip.lake}'
+    linked = FishingSpot.objects.filter(pk=trip.fishing_spot_id, user=user).first()
+    if linked and linked.latitude is not None and linked.longitude is not None:
+        return f'{linked.latitude},{linked.longitude}', 'Reissun oman kalapaikan koordinaatit'
+    return trip.weather_place or (linked.name if linked else '') or trip.lake or trip.location, f'Viimeisin sopiva reissu: {trip.lake}'
 
 
 def forecast_window(place, period, now):
@@ -253,17 +256,17 @@ def advise(user, question, selected_place='', before_send=None):
     compare = bool(re.search(r'mihin|minne|kalapaik', question.casefold())) and not plan['place'] and not selected_place
     if compare and saved_spots['places'] and plan['period'] != 'history':
         candidates = sorted(saved_spots['places'], key=lambda spot: (spot['latitude'] is None or spot['longitude'] is None, -spot['total_trips']))
-        forecasts_by_coords = {}
+        forecasts_by_place = {}
         for spot in candidates[:3]:
             entry = {'spot_id': spot['spot_id'], 'name': spot['name'], 'samples': [], 'error': ''}
-            if spot['latitude'] is None or spot['longitude'] is None:
-                entry['error'] = 'Karttasijainti puuttuu; ennustetta ei haettu.'
+            query = (f"{spot['latitude']},{spot['longitude']}" if spot['latitude'] is not None and spot['longitude'] is not None else spot['name'].strip())
+            if not query:
+                entry['error'] = 'Paikan nimi ja karttasijainti puuttuvat; ennustetta ei haettu.'
             else:
                 try:
-                    coords = f"{spot['latitude']},{spot['longitude']}"
-                    if coords not in forecasts_by_coords:
-                        forecasts_by_coords[coords] = forecast_window(coords, plan['period'], now)
-                    entry['samples'], _ = forecasts_by_coords[coords]
+                    if query not in forecasts_by_place:
+                        forecasts_by_place[query] = forecast_window(query, plan['period'], now)
+                    entry['samples'], _ = forecasts_by_place[query]
                 except weather.WeatherError as exc:
                     log_weather_failure(exc)
                     entry['error'] = 'Sääpalvelusta ei saatu ennustetta.'

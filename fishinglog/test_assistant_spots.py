@@ -91,3 +91,51 @@ class AssistantSpotTests(TestCase):
         self.assertNotIn('SECRET', str(logs.output))
         self.assertNotIn('PRIVATE', str(logs.output))
         self.assertIn('service_or_location_error', str(logs.output))
+
+    @patch('fishinglog.assistant.call_openai', return_value=ANSWER)
+    @patch('fishinglog.assistant.forecast_window', return_value=([{'target': 'tomorrow'}], []))
+    def test_comparison_falls_back_to_spot_name(self, forecast, api):
+        self.spot.latitude = self.spot.longitude = None
+        self.spot.name = 'Jämsä'
+        self.spot.save()
+        result = ai.advise(self.user, 'Mihin huomenna kalaan?')
+        forecast.assert_called_once()
+        self.assertEqual(forecast.call_args.args[:2], ('Jämsä', 'tomorrow'))
+        self.assertFalse(result['warning'])
+        api.assert_called_once()
+
+    @patch('fishinglog.assistant.call_openai', return_value=ANSWER)
+    @patch('fishinglog.assistant.forecast_window')
+    def test_empty_spot_skips_weather(self, forecast, api):
+        self.spot.latitude = self.spot.longitude = None
+        self.spot.name = ''
+        self.spot.save()
+        result = ai.advise(self.user, 'Mihin huomenna?')
+        forecast.assert_not_called()
+        self.assertTrue(result['warning'])
+        api.assert_called_once()
+
+    def test_named_tomorrow_resolves_then_downloads(self):
+        from datetime import datetime, timedelta
+        from django.utils import timezone
+        from django.core.cache import cache
+        cache.clear()
+        now = timezone.make_aware(datetime(2026, 9, 10, 10))
+        with patch('fishinglog.home_weather.timezone.now', return_value=now), patch('fishinglog.weather.resolve_place', return_value={'latitude':61.86, 'longitude':25.19}) as resolve, patch('fishinglog.weather.download', return_value=b'xml') as download, patch('fishinglog.weather.parse_response', return_value={'values': {}}):
+            samples, _ = ai.forecast_window('Jämsä', 'tomorrow', now)
+            resolve.assert_called_once_with('Jämsä')
+            self.assertEqual(download.call_args.args[0]['latlon'], '61.86,25.19')
+            self.assertTrue(samples)
+            self.assertTrue(all(datetime.fromisoformat(row['target']).date() == (now + timedelta(days=1)).date() for row in samples))
+
+    @patch('fishinglog.assistant.call_openai', return_value=ANSWER)
+    @patch('fishinglog.assistant.forecast_window', return_value=([{'target': 'tomorrow'}], []))
+    def test_trip_name_works_without_saved_spot(self, forecast, api):
+        self.trip.fishing_spot = None
+        self.trip.latitude = self.trip.longitude = None
+        self.trip.lake = 'Jämsä'
+        self.trip.weather_place = ''
+        self.trip.save()
+        ai.advise(self.user, 'Kannattaako huomenna kalaan?')
+        self.assertEqual(forecast.call_args.args[0], 'Jämsä')
+        api.assert_called_once()
