@@ -153,7 +153,8 @@ class ForecastWindowTests(TestCase):
         self.assertEqual(len({row['target'][:10] for row in samples}), 3)
         self.assertTrue(all(datetime.fromisoformat(row['target']) >= now for row in samples))
         download.assert_called_once()
-        samples, _ = ai.forecast_window('Kyyvesi', 'tomorrow', now)
+        with patch('fishinglog.home_weather.timezone.now', return_value=now):
+            samples, _ = ai.forecast_window('Kyyvesi', 'tomorrow', now)
         self.assertTrue(all(row['target'].startswith('2026-09-08') for row in samples))
 
     @patch('fishinglog.assistant.weather.fetch_weather', return_value={'values': {}})

@@ -1,0 +1,93 @@
+import json
+from unittest.mock import patch
+from django.test import TestCase
+from django.contrib.auth import get_user_model
+from .models import FishingSpot, Trip, Catch
+from .test_catch_batch import trip_data
+from .test_assistant import ANSWER
+from . import assistant as ai
+
+
+class AssistantSpotTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user('owner')
+        self.other = get_user_model().objects.create_user('other')
+        self.spot = FishingSpot.objects.create(user=self.user, name='Oma selkä', latitude=62, longitude=26)
+        self.secret = FishingSpot.objects.create(user=self.other, name='SECRET_SPOT', latitude=63, longitude=27)
+        self.trip = Trip.objects.create(owner=self.user, fishing_spot=self.spot, **trip_data())
+        Catch.objects.create(trip=self.trip, species='Kuha', length='0.5', weight='1.2', time='10:00', notes='Oma havainto')
+        foreign = Trip.objects.create(owner=self.other, fishing_spot=self.spot, **trip_data())
+        Catch.objects.create(trip=foreign, species='SECRET_FISH', time='10:00')
+
+    def test_history_links_and_privacy(self):
+        context = ai.spots_for(self.user, '')
+        self.assertEqual(len(context['places']), 1)
+        spot = context['places'][0]
+        self.assertEqual(spot['total_trips'], 1)
+        self.assertTrue(spot['limited_history'])
+        fish = spot['history'][0]['catches'][0]
+        self.assertEqual(fish['species'], 'Kuha')
+        self.assertEqual(str(fish['length']), '0.500')
+        self.assertNotIn('SECRET', json.dumps(context, default=str))
+
+    @patch('fishinglog.assistant.call_openai', return_value=ANSWER)
+    @patch('fishinglog.assistant.forecast_window', return_value=([{'target': 'tomorrow'}], []))
+    def test_comparison_bounded_and_one_call(self, forecast, api):
+        for i in range(5):
+            FishingSpot.objects.create(user=self.user, name=f'Paikka {i}', latitude=62+i, longitude=26)
+        result = ai.advise(self.user, 'Mihin kannattaisi mennä huomenna kalaan?')
+        self.assertEqual(forecast.call_count, 3)
+        api.assert_called_once()
+        payload = api.call_args.args[1]
+        self.assertEqual(len(payload['spot_forecasts']), 3)
+        self.assertNotIn('SECRET', json.dumps(payload, default=str))
+        self.assertIn('historiaa on vähän', result['answer']['uncertainty'])
+
+    @patch('fishinglog.assistant.call_openai', return_value=ANSWER)
+    @patch('fishinglog.assistant.forecast_window', side_effect=ai.weather.WeatherError('offline'))
+    def test_missing_forecasts_safe(self, forecast, api):
+        result = ai.advise(self.user, 'Mihin huomenna?')
+        self.assertIsNone(result['answer']['score'])
+        self.assertTrue(result['warning'])
+        api.assert_called_once()
+
+    @patch('fishinglog.assistant.call_openai', return_value=ANSWER)
+    @patch('fishinglog.assistant.forecast_window')
+    def test_history_only_and_places_without_history(self, forecast, api):
+        empty = FishingSpot.objects.create(user=self.user, name='Uusi')
+        ai.advise(self.user, 'Vertaa kalapaikkojen reissuja')
+        forecast.assert_not_called()
+        payload = api.call_args.args[1]
+        row = next(p for p in payload['saved_spots']['places'] if p['spot_id'] == empty.pk)
+        self.assertEqual(row['history'], [])
+        self.assertTrue(row['limited_history'])
+
+    @patch('fishinglog.assistant.call_openai', return_value=ANSWER)
+    @patch('fishinglog.assistant.forecast_window', return_value=([{'target': 'tomorrow'}], []))
+    def test_named_spot_uses_coordinates(self, forecast, api):
+        ai.advise(self.user, 'Kannattaako huomenna mennä Oma selkä?')
+        self.assertEqual(forecast.call_args.args[0], '62.00000,26.00000')
+        self.assertEqual(forecast.call_args.args[1], 'tomorrow')
+        api.assert_called_once()
+
+    def test_tomorrow_uses_shared_forecast_and_local_date(self):
+        from datetime import datetime, timedelta
+        from django.utils import timezone
+        from django.core.cache import cache
+        cache.clear()
+        now = timezone.make_aware(datetime(2026, 9, 10, 10))
+        with patch('fishinglog.home_weather.timezone.now', return_value=now), patch('fishinglog.weather.download', return_value=b'xml') as download, patch('fishinglog.weather.parse_response', return_value={'values': {}}), patch('fishinglog.weather.requests.get') as network:
+            samples, _ = ai.forecast_window('62.12345,26.54321', 'tomorrow', now)
+            self.assertTrue(samples)
+            self.assertTrue(all(datetime.fromisoformat(row['target']).date() == (now + timedelta(days=1)).date() for row in samples))
+            self.assertEqual(download.call_args.args[0]['latlon'], '62.12345,26.54321')
+            ai.forecast_window('62.12345,26.54321', 'tomorrow', now)
+            download.assert_called_once()
+            network.assert_not_called()
+
+    def test_safe_failure_logging(self):
+        with self.assertLogs(ai.logger, level='DEBUG') as logs:
+            ai.log_weather_failure(ai.weather.WeatherError('SECRET_KEY PRIVATE_LOCATION'))
+        self.assertNotIn('SECRET', str(logs.output))
+        self.assertNotIn('PRIVATE', str(logs.output))
+        self.assertIn('service_or_location_error', str(logs.output))
