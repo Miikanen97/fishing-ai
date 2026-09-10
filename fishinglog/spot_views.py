@@ -9,6 +9,13 @@ from .forms import LogForm
 
 
 class SpotForm(LogForm):
+    def clean(self):
+        from django import forms
+        data = super().clean()
+        if (data.get('latitude') is None) != (data.get('longitude') is None):
+            raise forms.ValidationError('Anna molemmat koordinaatit tai jätä molemmat tyhjiksi.')
+        return data
+
     class Meta:
         model = FishingSpot
         fields = ['name', 'notes', 'latitude', 'longitude']
@@ -27,7 +34,7 @@ def spots(request, pk=None):
         saved.save()
         messages.success(request, 'Kalapaikka tallennettu.')
         return redirect('fishinglog:spots')
-    data = [{'name': item.name, 'notes': item.notes, 'latitude': str(item.latitude), 'longitude': str(item.longitude),
+    data = [{'id': item.pk, 'name': item.name, 'notes': item.notes, 'latitude': str(item.latitude) if item.latitude is not None else None, 'longitude': str(item.longitude) if item.longitude is not None else None,
              'edit_url': reverse('fishinglog:spot_update', args=[item.pk]),
              'delete_url': reverse('fishinglog:spot_delete', args=[item.pk])} for item in own_spots]
     return render(request, 'fishinglog/spots.html', {'form': form, 'spot': spot, 'spots': data})

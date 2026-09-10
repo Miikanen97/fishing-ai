@@ -9,6 +9,7 @@
 <div class="d-flex flex-wrap align-items-start gap-2"><a class="btn btn-outline-primary" href="{% url 'fishinglog:trip_update' trip.pk %}">Muokkaa reissua</a><a class="btn btn-outline-danger" href="{% url 'fishinglog:trip_delete' trip.pk %}">Poista reissu</a></div>
 </div>
 <section class="card p-3 mb-4"><h2 class="h5">Kalastuspaikka</h2>
+{% if trip.fishing_spot %}<p>Tallennettu kalapaikka: <a href="{% url 'fishinglog:spots' %}?spot={{ trip.fishing_spot_id|unlocalize }}">{{ trip.fishing_spot.name }} – Avaa Kalapaikat-kartalla</a></p>{% endif %}
 {% if trip.latitude != None and trip.longitude != None %}
 <div id="fishing-map" class="fishing-map fishing-map-small" data-latitude="{{ trip.latitude|unlocalize }}" data-longitude="{{ trip.longitude|unlocalize }}" role="region" aria-label="Kalastuspaikka kartalla"></div>
 <p id="map-status" class="small mt-2" role="status">Koordinaatit: {{ trip.latitude }}, {{ trip.longitude }}</p>

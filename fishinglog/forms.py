@@ -1,6 +1,6 @@
 from django import forms
 from datetime import datetime
-from .models import Catch, Trip
+from .models import Catch, Trip, FishingSpot
 
 
 class WeatherLookupForm(forms.Form):
@@ -37,8 +37,25 @@ class LogForm(forms.ModelForm):
 
 
 class TripForm(LogForm):
+    save_spot = forms.BooleanField(required=False, label='Tallenna tämä paikka myös omiin kalapaikkoihin', help_text='Valitse Muu paikka ja anna nimi. Karttasijainnin voit lisätä myös myöhemmin.')
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['fishing_spot'].queryset = FishingSpot.objects.filter(user=user) if user and user.is_authenticated else FishingSpot.objects.none()
+        self.fields['fishing_spot'].label = 'Tallennettu kalapaikka'
+        self.fields['fishing_spot'].empty_label = 'Muu paikka'
+        self.fields['fishing_spot'].widget.attrs['class'] = 'form-select'
+        self.fields['location'].required = False
+        self.fields['location'].help_text = 'Muu paikka: kirjoita paikan nimi. Tallennetun kalapaikan nimi tallennetaan reissulle valinnan perusteella.'
+
     def clean(self):
         data = super().clean()
+        spot = data.get('fishing_spot')
+        if spot:
+            data['location'] = spot.name
+            data['latitude'], data['longitude'] = spot.latitude, spot.longitude
+        elif not data.get('location'):
+            self.add_error('location', 'Anna kalastuspaikan nimi tai valitse tallennettu kalapaikka.')
         if (data.get('latitude') is None) != (data.get('longitude') is None):
             raise forms.ValidationError('Anna molemmat kalastuspaikan koordinaatit tai jätä molemmat tyhjiksi.')
         return data
@@ -51,7 +68,7 @@ class TripForm(LogForm):
 
     class Meta:
         model = Trip
-        fields = ['date', 'lake', 'location', 'start_time', 'end_time', 'weather_place', 'latitude', 'longitude', 'weather', 'air_temperature', 'wind_speed', 'wind_gust', 'wind_direction', 'air_pressure', 'cloud_cover', 'precipitation', 'weather_source', 'weather_latitude', 'weather_longitude', 'water_temperature', 'fishing_method', 'depth', 'boat_speed', 'notes', 'no_catch']
+        fields = ['date', 'lake', 'fishing_spot', 'location', 'save_spot', 'start_time', 'end_time', 'weather_place', 'latitude', 'longitude', 'weather', 'air_temperature', 'wind_speed', 'wind_gust', 'wind_direction', 'air_pressure', 'cloud_cover', 'precipitation', 'weather_source', 'weather_latitude', 'weather_longitude', 'water_temperature', 'fishing_method', 'depth', 'boat_speed', 'notes', 'no_catch']
         widgets = {
             'weather_source': forms.HiddenInput(),
             'weather_latitude': forms.HiddenInput(),

@@ -13,6 +13,7 @@ class Trip(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='fishing_trips', verbose_name='Omistaja')
     date = models.DateField('Päivämäärä', default=timezone.localdate)
     lake = models.CharField('Järven nimi', max_length=150)
+    fishing_spot = models.ForeignKey('FishingSpot', on_delete=models.SET_NULL, null=True, blank=True, related_name='trips', verbose_name='Paikka')
     location = models.CharField('Kalastuspaikka', max_length=200)
     start_time = models.TimeField('Aloitusaika')
     end_time = models.TimeField('Lopetusaika')
@@ -87,9 +88,9 @@ class FishingProfile(models.Model):
 
 class FishingSpot(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='fishing_spots')
-    name = models.CharField('Paikan nimi', max_length=150)
-    latitude = models.DecimalField('Leveysaste', max_digits=8, decimal_places=5, validators=[MinValueValidator(-90), MaxValueValidator(90)])
-    longitude = models.DecimalField('Pituusaste', max_digits=8, decimal_places=5, validators=[MinValueValidator(-180), MaxValueValidator(180)])
+    name = models.CharField('Paikan nimi', max_length=200)
+    latitude = models.DecimalField('Leveysaste', max_digits=8, decimal_places=5, null=True, blank=True, validators=[MinValueValidator(-90), MaxValueValidator(90)])
+    longitude = models.DecimalField('Pituusaste', max_digits=8, decimal_places=5, null=True, blank=True, validators=[MinValueValidator(-180), MaxValueValidator(180)])
     notes = models.TextField('Muistiinpanot', blank=True)
     created_at = models.DateTimeField('Luotu', auto_now_add=True)
 

@@ -32,6 +32,9 @@
   const items = JSON.parse(document.getElementById('spots-data').textContent);
   const points = [], savedMarkers = [];
   items.forEach(item => {
+    if (item.latitude == null || item.longitude == null) {
+      points.push(null); savedMarkers.push(null); return;
+    }
     const point = [Number(item.latitude), Number(item.longitude)]; points.push(point);
     const popup = document.createElement('div');
     const title = document.createElement('strong'); title.textContent = item.name; popup.appendChild(title);
@@ -42,7 +45,14 @@
     });
     savedMarkers.push(L.marker(point, {icon:spotIcon}).addTo(map).bindPopup(popup));
   });
-  if (points.length) map.fitBounds(points, {padding:[35,35], maxZoom:13});
+  if (points.some(Boolean)) map.fitBounds(points.filter(Boolean), {padding:[35,35], maxZoom:13});
+  const requestedSpot = new URLSearchParams(window.location.search).get('spot');
+  const focusIndex = requestedSpot && /^[1-9][0-9]*$/.test(requestedSpot)
+    ? items.findIndex(item => String(item.id) === requestedSpot) : -1;
+  if (focusIndex !== -1 && savedMarkers[focusIndex]) {
+    map.setView(points[focusIndex], 15);
+    savedMarkers[focusIndex].openPopup();
+  }
   readPoint();
   lat.addEventListener('change', readPoint); lon.addEventListener('change', readPoint);
   map.on('click', event => {
@@ -53,6 +63,7 @@
     link.addEventListener('click', event => {
       event.preventDefault();
       const index = Number(link.dataset.spotIndex);
+      if (!savedMarkers[index]) return;
       map.setView(points[index], 15);
       savedMarkers[index].openPopup();
       node.scrollIntoView({behavior:'smooth', block:'center'});

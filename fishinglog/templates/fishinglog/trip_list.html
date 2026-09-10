@@ -1,7 +1,7 @@
 {% extends 'fishinglog/base.html' %}
 {% block title %}Kaikki reissut{% endblock %}
 {% block content %}
-<h1 class="mb-2">Kaikki reissut</h1><p class="text-secondary mb-4">Kalastusmuistosi uusimmasta vanhimpaan.</p>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><h1 class="mb-0">Kaikki reissut</h1><a class="btn btn-primary" href="{% url 'fishinglog:trip_create' %}">+ Lisää uusi reissu</a></div><p class="text-secondary mb-4">Kalastusmuistosi uusimmasta vanhimpaan.</p>
 {% include 'fishinglog/trip_cards.html' %}
 {% if page_obj.has_other_pages %}<nav class="d-flex flex-wrap gap-3 align-items-center mt-4" aria-label="Reissujen sivutus">
 {% if page_obj.has_previous %}<a class="btn btn-outline-primary" href="?page={{ page_obj.previous_page_number }}">Edellinen</a>{% endif %}
