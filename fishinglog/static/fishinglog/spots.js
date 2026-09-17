@@ -82,3 +82,12 @@
     {enableHighAccuracy:true,timeout:10000,maximumAge:60000});
   });
 })();
+
+document.getElementById('spots-add')?.addEventListener('click', function () {
+  document.getElementById('spot-editor').open = true;
+  document.getElementById('id_name').focus();
+});
+
+if (window.location.hash === "#spot-editor") {
+  document.getElementById("spot-editor").open = true;
+}

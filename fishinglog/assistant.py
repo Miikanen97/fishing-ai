@@ -6,9 +6,10 @@ import re
 from datetime import datetime, time, timedelta, timezone as utc
 from collections import Counter
 import requests
-from django.db.models import Count
+from django.db.models import Count, F, Q, Window, Prefetch, prefetch_related_objects
+from django.db.models.functions import RowNumber
 from django.utils import timezone
-from .models import Trip, FishingSpot
+from .models import Trip, FishingSpot, Catch
 from . import weather
 from .home_weather import upcoming_weather
 
@@ -84,9 +85,21 @@ def call_openai(instructions, payload, output_schema, token_limit, before_send=N
 
 def history_for(user):
     trips = Trip.objects.filter(owner=user).annotate(fish_count=Count('catches'))
+    recent = list(trips.order_by('-date', '-start_time', '-pk')[:40])
+    grouped = {}
+    # Rank aggregated groups per trip in SQL, keeping the existing 8-group limit.
+    group_rows = Catch.objects.filter(trip__in=recent, trip__owner=user).values(
+        'trip_id', 'species', 'lure_name', 'lure_color', 'depth', 'time'
+    ).annotate(count=Count('pk')).annotate(
+        group_rank=Window(RowNumber(), partition_by=[F('trip_id')], order_by=F('count').desc())
+    ).filter(group_rank__lte=8).order_by('trip_id', '-count')
+    for group in group_rows:
+        trip_id = group.pop('trip_id')
+        group.pop('group_rank')
+        grouped.setdefault(trip_id, []).append(group)
     rows = []
-    for trip in trips.order_by('-date', '-start_time', '-pk')[:40]:
-        groups = list(trip.catches.values('species', 'lure_name', 'lure_color', 'depth', 'time').annotate(count=Count('pk')).order_by('-count')[:8])
+    for trip in recent:
+        groups = grouped.get(trip.pk, [])
         row = {field: getattr(trip, field) for field in ['date', 'lake', 'start_time', 'end_time', 'fishing_method',
                 'air_temperature', 'wind_speed', 'wind_gust', 'wind_direction', 'air_pressure', 'cloud_cover', 'precipitation', 'depth']}
         row.update(fish_count=trip.fish_count, outcome='saalista' if trip.fish_count else 'ei saalista' if trip.no_catch else 'saalistieto puuttuu',
@@ -101,27 +114,35 @@ def history_for(user):
 
 def spots_for(user, question):
     """Bounded independent ownership filters, including inconsistent legacy links."""
-    spots = list(FishingSpot.objects.filter(user=user).order_by('-created_at', '-pk')[:50])
+    spots = list(FishingSpot.objects.filter(user=user).annotate(
+        assistant_total_trips=Count('trips', filter=Q(trips__owner=user))
+    ).order_by('-created_at', '-pk')[:50])
     spots.sort(key=lambda spot: spot.name.casefold() not in question.casefold())
+    # Sliced prefetches use per-parent limits, not an unbounded history download.
+    trip_sample = Trip.objects.filter(owner=user).annotate(
+        assistant_catch_count=Count('catches')
+    ).order_by('-date', '-start_time', '-pk').prefetch_related(
+        Prefetch('catches', queryset=Catch.objects.order_by('pk')[:8], to_attr='assistant_catches')
+    )[:8]
+    prefetch_related_objects(spots[:10], Prefetch('trips', queryset=trip_sample, to_attr='assistant_trips'))
     rows = []
     for spot in spots[:10]:
-        trips = Trip.objects.filter(owner=user, fishing_spot=spot).order_by('-date', '-start_time', '-pk')
         history = []
-        for trip in trips[:8]:
+        for trip in spot.assistant_trips:
             row = {field: getattr(trip, field) for field in ('date', 'start_time', 'end_time',
                 'fishing_method', 'depth', 'weather', 'air_temperature', 'water_temperature',
                 'wind_speed', 'wind_direction', 'wind_gust', 'air_pressure', 'precipitation', 'cloud_cover')}
             row['notes'] = trip.notes[:250]
-            row['catch_count'] = trip.catches.count()
+            row['catch_count'] = trip.assistant_catch_count
             row['outcome'] = 'saalista' if row['catch_count'] else 'ei saalista' if trip.no_catch else 'saalistieto puuttuu'
-            row['catches'] = list(trip.catches.order_by('pk').values('species', 'length', 'weight',
-                'lure_name', 'lure_color', 'time', 'depth', 'notes')[:8])
+            row['catches'] = [{field: getattr(catch, field) for field in ('species', 'length', 'weight',
+                'lure_name', 'lure_color', 'time', 'depth', 'notes')} for catch in trip.assistant_catches]
             for catch in row['catches']:
                 catch['notes'] = catch['notes'][:250]
             history.append(row)
         row = {'spot_id': spot.pk, 'name': spot.name, 'notes': spot.notes[:250],
                'latitude': spot.latitude, 'longitude': spot.longitude,
-               'total_trips': trips.count(), 'history': history}
+               'total_trips': spot.assistant_total_trips, 'history': history}
         while len(json.dumps(row, default=str, ensure_ascii=False)) > 2000 and history:
             history.pop()
         row['included_trips'] = len(history)

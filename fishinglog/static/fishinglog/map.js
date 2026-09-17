@@ -25,6 +25,8 @@
     iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34],
     tooltipAnchor: [16, -28], shadowSize: [41, 41]
   });
+  const panel = element.closest('details');
+  if (panel) panel.addEventListener('toggle', () => { if (panel.open) map.invalidateSize(); });
   let marker, locationRequest = 0;
   function show(point, pan = true) {
     if (!point) {

@@ -1,0 +1,6 @@
+.trip-form summary { cursor:pointer; padding:.7rem 0; font-weight:600; min-height:44px; }
+.trip-form summary span { font-size:.8rem; color:#607770; font-weight:400; }
+.trip-form input:not([type=checkbox]), .trip-form select, .trip-form button, .trip-form .btn { min-height:44px; }
+.trip-form [hidden] { display:none !important; }
+.trip-form { min-width:0; overflow-wrap:anywhere; }
+.trip-form .form-control, .trip-form .form-select { min-width:0; max-width:100%; }

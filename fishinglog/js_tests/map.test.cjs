@@ -7,7 +7,7 @@ function setup({point=null,editable=true,leaflet=true}={}) {
  const item=value=>({value,events:{},textContent:'',addEventListener(n,fn){this.events[n]=fn;},dispatchEvent(e){this.events[e.type]?.(e);}});
  const fields={latitude:item(point?.[0]??''),longitude:item(point?.[1]??''),weather_latitude:item('62'),weather_longitude:item('26')};
  const form={elements:{namedItem:n=>fields[n]},events:{},addEventListener(n,fn){this.events[n]=fn;}};
- const element={dataset:{iconUrl:'/static/icon.abc.png',iconRetinaUrl:'/static/icon2.def.png',shadowUrl:'/static/shadow.ghi.png',editable:String(editable),latitude:point?.[0]??'',longitude:point?.[1]??''},closest:()=>form};
+ const element={dataset:{iconUrl:'/static/icon.abc.png',iconRetinaUrl:'/static/icon2.def.png',shadowUrl:'/static/shadow.ghi.png',editable:String(editable),latitude:point?.[0]??'',longitude:point?.[1]??''},closest:selector=>selector === 'form' ? form : null};
  const ui={'fishing-map':element,'map-status':item(''),'clear-location':item(''),'locate-me':item('')};
  let marker=null,geoSuccess,geoError,geoCalls=0;
  const map={events:{},setView(p,z){this.center=p;return this;},panTo(p){this.center=p;},on(n,fn){this.events[n]=fn;return this;},removeLayer(){marker=null;}};

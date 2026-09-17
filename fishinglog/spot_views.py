@@ -4,7 +4,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
-from .models import FishingSpot
+from django.db.models import Count, Q
+from .models import FishingSpot, Catch
 from .forms import LogForm
 
 
@@ -34,7 +35,13 @@ def spots(request, pk=None):
         saved.save()
         messages.success(request, 'Kalapaikka tallennettu.')
         return redirect('fishinglog:spots')
-    data = [{'id': item.pk, 'name': item.name, 'notes': item.notes, 'latitude': str(item.latitude) if item.latitude is not None else None, 'longitude': str(item.longitude) if item.longitude is not None else None,
+    species = {}
+    for row in Catch.objects.filter(trip__owner=request.user, trip__fishing_spot__user=request.user).values('trip__fishing_spot_id', 'species').annotate(total=Count('pk')).order_by('-total', 'species'):
+        species.setdefault(row['trip__fishing_spot_id'], []).append(row['species'])
+    own_spots = own_spots.annotate(
+        trip_count=Count('trips', filter=Q(trips__owner=request.user), distinct=True),
+        catch_count=Count('trips__catches', filter=Q(trips__owner=request.user), distinct=True))
+    data = [{'id': item.pk, 'name': item.name, 'trip_count': item.trip_count, 'catch_count': item.catch_count, 'species_summary': ' · '.join(species.get(item.pk, [])[:4]), 'notes': item.notes, 'latitude': str(item.latitude) if item.latitude is not None else None, 'longitude': str(item.longitude) if item.longitude is not None else None,
              'edit_url': reverse('fishinglog:spot_update', args=[item.pk]),
              'delete_url': reverse('fishinglog:spot_delete', args=[item.pk])} for item in own_spots]
     return render(request, 'fishinglog/spots.html', {'form': form, 'spot': spot, 'spots': data})

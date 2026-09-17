@@ -2,10 +2,13 @@
 {% block title %}Kaikki reissut{% endblock %}
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><h1 class="mb-0">Kaikki reissut</h1><a class="btn btn-primary" href="{% url 'fishinglog:trip_create' %}">+ Lisää uusi reissu</a></div><p class="text-secondary mb-4">Kalastusmuistosi uusimmasta vanhimpaan.</p>
+<form method="get" class="card p-3 mb-3"><div class="row g-2">{% for field in filters %}<div class="col-12 col-sm-6 col-lg"><label class="form-label small" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}</div>{{ filters.non_field_errors }}<div class="d-flex flex-wrap gap-2 mt-2"><button class="btn btn-primary">Hae reissut</button><a class="btn btn-outline-secondary" href="{% url 'fishinglog:trip_list' %}">Tyhjennä suodattimet</a></div></form>
+{% if active_filters %}<p class="small">Aktiiviset suodattimet: {% for label,value in active_filters %}<span class="me-2">{{ label }}: {{ value }}</span>{% endfor %}</p>{% endif %}
+<p class="small text-secondary">{{ page_obj.paginator.count }} reissua</p>
 {% include 'fishinglog/trip_cards.html' %}
 {% if page_obj.has_other_pages %}<nav class="d-flex flex-wrap gap-3 align-items-center mt-4" aria-label="Reissujen sivutus">
-{% if page_obj.has_previous %}<a class="btn btn-outline-primary" href="?page={{ page_obj.previous_page_number }}">Edellinen</a>{% endif %}
+{% if page_obj.has_previous %}<a class="btn btn-outline-primary" href="?{{ filter_query }}&amp;page={{ page_obj.previous_page_number }}">Edellinen</a>{% endif %}
 <span>Sivu {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-{% if page_obj.has_next %}<a class="btn btn-outline-primary" href="?page={{ page_obj.next_page_number }}">Seuraava</a>{% endif %}
+{% if page_obj.has_next %}<a class="btn btn-outline-primary" href="?{{ filter_query }}&amp;page={{ page_obj.next_page_number }}">Seuraava</a>{% endif %}
 </nav>{% endif %}
 {% endblock %}

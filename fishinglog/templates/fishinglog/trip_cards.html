@@ -1,12 +1,8 @@
 <div class="row g-3">
-{% for trip in trips %}
-<div class="col-12 col-md-6 col-lg-4"><article class="card h-100 p-4">
-<p class="small text-secondary mb-2">{{ trip.date|date:"d.m.Y" }} · {{ trip.start_time|time:"H:i" }}–{{ trip.end_time|time:"H:i" }}</p>
-<h2 class="h4"><a href="{{ trip.get_absolute_url }}">{{ trip.lake }}</a></h2>
-<p class="text-secondary">{{ trip.location }}</p>
-<div class="mt-auto d-flex flex-wrap gap-2"><span class="badge text-bg-light">{{ trip.fishing_method }}</span><span class="badge text-bg-light">{% if trip.no_catch and not trip.catch_count %}Ei saalista{% else %}{{ trip.catch_count }} saalista{% endif %}</span></div>
-</article></div>
-{% empty %}
-<div class="col-12"><div class="card text-center p-5"><h2 class="h4">Ensimmäinen reissu odottaa</h2><p class="text-secondary">Aloita kirjaamalla kalastusreissun tiedot. Voit lisätä saaliit sen jälkeen.</p><div><a class="btn btn-primary" href="{% url 'fishinglog:trip_create' %}">Lisää kalastusreissu</a></div></div></div>
-{% endfor %}
-</div>
+{% for trip in trips %}<div class="col-12 col-md-6 col-lg-4"><article class="card h-100 p-3 position-relative">
+<h2 class="h5 mb-1"><a class="stretched-link" href="{{ trip.get_absolute_url }}">{{ trip.location|default:trip.lake }}</a></h2>
+{% if trip.lake != trip.location %}<p class="small text-secondary mb-1">{{ trip.lake }}</p>{% endif %}
+<p class="small text-secondary mb-2">{{ trip.date|date:'d.m.Y' }} · {{ trip.start_time|time:'H:i' }}–{{ trip.end_time|time:'H:i' }}{% if trip.end_time < trip.start_time %} (+1 vrk){% endif %}</p>
+<p class="mb-2">{{ trip.fishing_method }}</p>
+<div class="mt-auto"><strong class="small">{% if trip.catch_count %}Saaliit ({{ trip.catch_count }}){% elif trip.no_catch %}Ei saalista{% else %}Ei saalistietoa{% endif %}</strong>{% if trip.species_summary %}<p class="small mb-0">🐟 {{ trip.species_summary }}</p>{% endif %}</div>
+</article></div>{% empty %}<div class="col-12"><div class="card p-4"><h2 class="h5">{% if filters %}Ei reissuja{% else %}Ensimmäinen reissu odottaa{% endif %}</h2><p class="mb-0">Muuta suodattimia tai lisää uusi kalastusreissu.</p></div></div>{% endfor %}</div>

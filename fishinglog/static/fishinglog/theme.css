@@ -1,0 +1,23 @@
+.theme-toggle { width:44px; height:44px; flex:0 0 44px; padding:.4rem; }
+[data-bs-theme="dark"] { --bs-body-bg:#101b1d; --bs-body-color:#e3eeeb; --bs-secondary-color:#adbfba; --bs-border-color:#3b5351; --bs-tertiary-bg:#213333; --bs-secondary-bg:#263c3b; --bs-link-color:#84dbcb; --bs-link-hover-color:#b0f1e6; }
+[data-bs-theme="dark"] body { background:#101b1d; color:#e3eeeb; }
+[data-bs-theme="dark"] .card, [data-bs-theme="dark"] header.bg-white { background:#19292b !important; border-color:#3b5351; }
+[data-bs-theme="dark"] .bg-light, [data-bs-theme="dark"] .bg-white { background-color:#213333 !important; color:#e3eeeb; }
+[data-bs-theme="dark"] .brand, [data-bs-theme="dark"] a:not(.btn) { color:#84dbcb; }
+[data-bs-theme="dark"] dt, [data-bs-theme="dark"] .trip-form summary span, [data-bs-theme="dark"] .spot-editor input[type=number] { color:#adbfba; }
+[data-bs-theme="dark"] .form-control, [data-bs-theme="dark"] .form-select { background-color:#122123; color:#e3eeeb; border-color:#4c6561; }
+[data-bs-theme="dark"] .form-control:focus, [data-bs-theme="dark"] .form-select:focus { border-color:#84dbcb; box-shadow:0 0 0 .2rem #84dbcb33; }
+[data-bs-theme="dark"] .form-check-input { background-color:#122123; border-color:#819c95; }
+[data-bs-theme="dark"] .form-check-input:checked { background-color:#237f72; border-color:#84dbcb; }
+[data-bs-theme="dark"] .btn-primary { --bs-btn-bg:#23776b; --bs-btn-border-color:#409d8e; --bs-btn-hover-bg:#2a897b; --bs-btn-hover-border-color:#84dbcb; --bs-btn-active-bg:#23776b; }
+[data-bs-theme="dark"] .btn-outline-primary { --bs-btn-color:#84dbcb; --bs-btn-border-color:#84dbcb; --bs-btn-hover-bg:#23776b; --bs-btn-hover-border-color:#84dbcb; }
+[data-bs-theme="dark"] .btn-outline-secondary { --bs-btn-color:#cadbd5; --bs-btn-border-color:#80978f; }
+/* Leaflet tiles remain untouched. Only controls and popups change. */
+[data-bs-theme="dark"] .leaflet-popup-content-wrapper, [data-bs-theme="dark"] .leaflet-popup-tip, [data-bs-theme="dark"] .leaflet-control-layers, [data-bs-theme="dark"] .leaflet-bar a { background:#19292b; color:#e3eeeb; }
+[data-bs-theme="dark"] .leaflet-control-attribution { background:#19292bee; color:#e3eeeb; }
+@media(max-width:575px) { nav .brand { width:auto; flex:1 1 calc(100% - 65px); min-width:0; } }
+
+[data-bs-theme="dark"] .forecast-card { background:linear-gradient(150deg,#213333,#19292b); border-color:#3b5351; }
+[data-bs-theme="dark"] .forecast-day, [data-bs-theme="dark"] .forecast-gust, [data-bs-theme="dark"] .forecast-pressure { color:#adbfba; }
+[data-bs-theme="dark"] .forecast-expanded summary { color:#84dbcb; }
+[data-bs-theme="dark"] .forecast-strip { scrollbar-color:#719b91 #19292b; }

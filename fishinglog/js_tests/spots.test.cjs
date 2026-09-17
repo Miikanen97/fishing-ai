@@ -1,14 +1,18 @@
 const test=require('node:test'), assert=require('node:assert/strict'), vm=require('node:vm'), fs=require('node:fs'), path=require('node:path');
 for (const query of ['?spot=7', '', '?spot=invalid', '?spot=999', '?spot=-7', '?spot=8']) test('map and owner-scoped focus: ' + query,()=>{
  const events={},markers=[],tiles=[]; let calls=0,fail,success;
- const element=()=>({value:'',textContent:'',addEventListener(name,fn){this[name]=fn;},appendChild(){}});
- const nodes=Object.fromEntries(['spots-map','spots-status','id_latitude','id_longitude','spots-data','spots-locate','spot-editor'].map(id=>[id,element()]));
+ const element=()=>({focus(){this.focused=true;},value:'',textContent:'',addEventListener(name,fn){this[name]=fn;},appendChild(){}});
+ const nodes=Object.fromEntries(['spots-map','spots-status','id_latitude','id_longitude','spots-data','spots-locate','spot-editor','spots-add','id_name'].map(id=>[id,element()]));
  nodes['spots-map'].dataset={iconUrl:'/static/marker-icon.abc.png',iconRetinaUrl:'/static/marker-icon-2x.def.png',shadowUrl:'/static/marker-shadow.ghi.png'};
  nodes['spots-data'].textContent=JSON.stringify([{id:7,name:'Testipaikka',notes:'',latitude:'60',longitude:'24',edit_url:'/edit/',delete_url:'/delete/'},{id:8,name:'No coordinates',latitude:null,longitude:null}]);
  const link=element(); link.dataset={spotIndex:'0'}; nodes['spots-map'].scrollIntoView=()=>{};
  const map={setView(point){this.center=point;return this;},on(name,fn){events[name]=fn;},fitBounds(){}};
  const L={icon:options=>options,map:()=>map,tileLayer:(url,options)=>{const tile={url,options,addTo(){this.active=true;return this;},on(name,fn){this[name]=fn;}};tiles.push(tile);return tile;},marker(point,options){const marker={point,options,bindPopup(){return this;},openPopup(){this.opened=true;},addTo(){return this;},on(name,fn){this[name]=fn;},setLatLng(p){this.point=p;},getLatLng(){return {lat:this.point[0],lng:this.point[1]};}};markers.push(marker);return marker;},circleMarker(){return {addTo(){return this;},setLatLng(){}};}};
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../static/fishinglog/spots.js'),'utf8'),{URLSearchParams,window:{L,location:{search:query}},L,document:{getElementById:id=>nodes[id],createElement:element,querySelectorAll:()=>[link]},navigator:{geolocation:{getCurrentPosition(ok,no){calls++;success=ok;fail=no;}}}});
+ nodes['spots-add'].click();
+ assert.equal(nodes['spot-editor'].open,true);
+ assert.equal(nodes.id_name.focused,true);
+ assert.equal(nodes.id_latitude.value,'');
  assert.equal(calls,0);
  assert.equal(markers[0].opened,query === '?spot=7' ? true : undefined);
  if (query === '?spot=7') assert.equal(map.center[0],60);

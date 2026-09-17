@@ -1,17 +1,27 @@
 {% extends 'fishinglog/base.html' %}
+{% load static %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'fishinglog/package2.css' %}">{% endblock %}
 {% block title %}Kalastusavustaja{% endblock %}
 {% block content %}
 <div class="row justify-content-center"><div class="col-12 col-xl-9">
 <h1>Kalastusavustaja</h1>
-{% if not api_key_configured %}<div class="alert alert-warning" role="alert">OPENAI_API_KEY puuttuu tämän palvelinprosessin ympäristöstä. Pysäytä vanha palvelin ja käynnistä Django siitä PowerShell-ikkunasta, jossa asetit ympäristömuuttujan.</div>{% endif %}
-<p class="text-secondary">Kysy omista saaliistasi tai suunnittele seuraavaa reissua sään ja oman historiasi perusteella.</p>
+{% if not api_key_configured %}<div class="alert alert-warning" role="alert">{% if development %}OPENAI_API_KEY puuttuu tämän palvelinprosessin ympäristöstä. Pysäytä vanha palvelin ja käynnistä Django siitä PowerShell-ikkunasta, jossa asetit ympäristömuuttujan.{% else %}Kalastusavustaja ei ole juuri nyt käytettävissä. Yritä myöhemmin uudelleen.{% endif %}</div>{% endif %}
+<p class="text-secondary">Suunnittele seuraava kalareissu oman kalastushistoriasi ja sääennusteen avulla.</p>
 <div class="card p-3 p-md-4 mb-4"><form method="post" id="assistant-form">{% csrf_token %}
 {% for error in form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endfor %}
+<div class="d-flex flex-wrap gap-2 mb-3" aria-label="Pikakysymykset">
+<button type="button" class="btn btn-outline-primary btn-sm" data-question="Mihin kannattaisi mennä huomenna kalaan?">🎣 Minne kannattaisi lähteä?</button>
+<button type="button" class="btn btn-outline-primary btn-sm" data-question="Mikä kala olisi paras kohde huomenna?">🐟 Mitä kalaa kannattaa yrittää?</button>
+<button type="button" class="btn btn-outline-primary btn-sm" data-question="Millä vieheellä olen saanut parhaiten kalaa?">🪝 Mitä viehettä käyttäisin?</button>
+<button type="button" class="btn btn-outline-primary btn-sm" data-question="Vertaa onnistuneita ja tyhjiä reissujani.">📊 Analysoi kalastushistoriaani</button>
+</div>
+<label class="form-label" for="assistant-spot">Oma kalapaikka</label>
+<select id="assistant-spot" class="form-select mb-3"><option value="">Muu paikka / automaattinen valinta</option>{% for spot in saved_spots %}<option value="{{ spot.name }}"{% if form.place.value == spot.name %} selected{% endif %}>{{ spot.name }}</option>{% endfor %}</select>
 {% for field in form %}<div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
-{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-{% for error in field.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}</div>{% endfor %}
-<p class="small text-secondary">Lähetä-painikkeesta kysymys ja rajattu yhteenveto omista reissuistasi ja saaliistasi lähetetään OpenAI:lle. Käyttäjätunnusta tai reissujen muistiinpanoja ei lähetetä. Paikka välitetään tarvittaessa FMI:n säähakuun.</p>
-<button class="btn btn-primary" type="submit">Lähetä</button><span id="assistant-progress" class="ms-2" role="status"></span>
+{% if field.help_text %}<div class="form-text" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</div>{% endif %}
+{% if field.errors %}<div class="text-danger" role="alert">{{ field.errors }}</div>{% endif %}</div>{% endfor %}
+<details class="small text-secondary mb-3"><summary>Miten tietojani käytetään?</summary><p class="mt-2">Kysy avustajalta -painikkeesta kysymys ja rajattu yhteenveto omista kalapaikoistasi, reissuistasi ja saaliistasi lähetetään OpenAI:lle. Yhteenveto voi sisältää muistiinpanoja. Käyttäjätunnusta ei lähetetä. Paikka välitetään tarvittaessa FMI:n säähakuun.</p></details>
+<button class="btn btn-primary" type="submit">Kysy avustajalta</button><span id="assistant-progress" class="ms-2" role="status"></span>
 </form></div>
 {% if result %}<section class="card p-3 p-md-4" aria-label="Avustajan vastaus" style="overflow-wrap:anywhere">
 <h2 class="h5 mb-3">Reissun yhteenveto</h2>

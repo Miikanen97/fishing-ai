@@ -36,6 +36,16 @@ class LogForm(forms.ModelForm):
                 field.widget.attrs['rows'] = 4
 
 
+class SpotSelect(forms.Select):
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        if hasattr(value, 'instance'):
+            spot = value.instance
+            option['attrs'].update({'data-latitude': str(spot.latitude) if spot.latitude is not None else '',
+                                    'data-longitude': str(spot.longitude) if spot.longitude is not None else ''})
+        return option
+
+
 class TripForm(LogForm):
     save_spot = forms.BooleanField(required=False, label='Tallenna tämä paikka myös omiin kalapaikkoihin', help_text='Valitse Muu paikka ja anna nimi. Karttasijainnin voit lisätä myös myöhemmin.')
 
@@ -44,6 +54,9 @@ class TripForm(LogForm):
         self.fields['fishing_spot'].queryset = FishingSpot.objects.filter(user=user) if user and user.is_authenticated else FishingSpot.objects.none()
         self.fields['fishing_spot'].label = 'Tallennettu kalapaikka'
         self.fields['fishing_spot'].empty_label = 'Muu paikka'
+        self.fields['fishing_spot'].widget = SpotSelect(choices=self.fields['fishing_spot'].choices)
+        self.fields['fishing_spot'].label = 'Kalastuspaikka'
+        self.fields['location'].label = 'Paikan nimi'
         self.fields['fishing_spot'].widget.attrs['class'] = 'form-select'
         self.fields['location'].required = False
         self.fields['location'].help_text = 'Muu paikka: kirjoita paikan nimi. Tallennetun kalapaikan nimi tallennetaan reissulle valinnan perusteella.'

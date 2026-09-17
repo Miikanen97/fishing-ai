@@ -1,9 +1,9 @@
 {% extends 'fishinglog/base.html' %}{% load static %}
 {% block title %}Kalapaikat{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'fishinglog/leaflet/leaflet.css' %}"><link rel="stylesheet" href="{% static 'fishinglog/spots.css' %}">
+{% block extra_head %}<link rel="stylesheet" href="{% static 'fishinglog/package2.css' %}"><link rel="stylesheet" href="{% static 'fishinglog/leaflet/leaflet.css' %}"><link rel="stylesheet" href="{% static 'fishinglog/spots.css' %}">
 <script defer src="{% static 'fishinglog/leaflet/leaflet.js' %}"></script><script defer src="{% static 'fishinglog/spots.js' %}"></script>{% endblock %}
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><h1 class="mb-0">Omat kalapaikat</h1><button type="button" id="spots-locate" class="btn btn-outline-primary">Näytä sijaintini</button></div>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><h1 class="mb-0">Omat kalapaikat</h1><div class="d-flex flex-wrap gap-2"><a {% if spot %}href="{% url 'fishinglog:spots' %}#spot-editor"{% else %}href="#spot-editor" id="spots-add"{% endif %} class="btn btn-primary">+ Lisää kalapaikka</a><button type="button" id="spots-locate" class="btn btn-outline-primary">Näytä sijaintini</button></div></div>
 <p class="small text-secondary mb-3">Lisää paikka napauttamalla karttaa. Avaa tallennetun paikan tiedot merkistä tai listan nimestä.</p>
 <div id="spots-map" role="region" aria-label="Omat kalapaikat kartalla"
  data-icon-url="{% static 'fishinglog/leaflet/images/marker-icon.png' %}"
@@ -21,7 +21,7 @@
 <div class="d-flex flex-wrap gap-2 mt-3"><button class="btn btn-primary" type="submit">Tallenna paikka</button>{% if spot %}<a class="btn btn-outline-secondary" href="{% url 'fishinglog:spots' %}">Peruuta muokkaus</a>{% endif %}</div></form></details>
 <section aria-label="Tallennetut kalapaikat"><h2 class="h5">Tallennetut paikat <span class="text-secondary fw-normal">({{ spots|length }})</span></h2>
 <ul class="list-group spot-list">{% for item in spots %}<li class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2">
-<div class="spot-list-info">{% if item.latitude != None and item.longitude != None %}<a class="spot-focus fw-semibold" href="#spots-map" data-spot-index="{{ forloop.counter0 }}">{{ item.name }}</a><div class="small text-secondary">{{ item.latitude }}, {{ item.longitude }}</div>{% else %}<span class="fw-semibold">{{ item.name }}</span><div class="small text-secondary">Karttasijainti puuttuu</div>{% endif %}{% if item.notes %}<p class="spot-list-notes small text-secondary mb-0">{{ item.notes }}</p>{% endif %}</div>
+<div class="spot-list-info">{% if item.latitude != None and item.longitude != None %}<a class="spot-focus fw-semibold" href="#spots-map" data-spot-index="{{ forloop.counter0 }}">{{ item.name }}</a>{% else %}<span class="fw-semibold">{{ item.name }}</span><div class="small text-secondary">Karttasijainti puuttuu</div>{% endif %}<div class="small">{{ item.trip_count }} reissua · {{ item.catch_count }} saalista</div>{% if item.species_summary %}<div class="small text-secondary">{{ item.species_summary }}</div>{% endif %}{% if item.notes %}<p class="spot-list-notes small text-secondary mb-0">{{ item.notes }}</p>{% endif %}</div>
 <div class="d-flex gap-3 spot-list-actions"><a href="{{ item.edit_url }}">Muokkaa</a><a href="{{ item.delete_url }}">Poista</a></div>
 </li>{% empty %}<li class="list-group-item text-secondary">Ei vielä paikkoja. Aloita napauttamalla karttaa.</li>{% endfor %}</ul></section>
 {% endblock %}

@@ -139,3 +139,39 @@ class AssistantSpotTests(TestCase):
         ai.advise(self.user, 'Kannattaako huomenna kalaan?')
         self.assertEqual(forecast.call_args.args[0], 'Jämsä')
         api.assert_called_once()
+
+
+class AssistantQueryTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user('batch-history')
+
+    def test_grouped_history_keeps_top_eight_per_trip_with_three_queries(self):
+        for i in range(3):
+            trip = Trip.objects.create(owner=self.user, **trip_data())
+            for count in range(1, 10):
+                Catch.objects.bulk_create([Catch(trip=trip, species=f'Laji {count}', time='12:00') for _ in range(count)])
+        with self.assertNumQueries(3):
+            data = ai.history_for(self.user)
+        self.assertEqual(data['total_trips'], 3)
+        self.assertEqual(data['included_trips'], 3)
+        for trip in data['recent_trips']:
+            self.assertEqual(trip['fish_count'], 45)
+            self.assertEqual([g['count'] for g in trip['catch_groups']], list(range(9, 1, -1)))
+            self.assertTrue(all(set(g) == {'species','lure_name','lure_color','depth','time','count'} for g in trip['catch_groups']))
+
+    def test_spot_samples_keep_counts_order_and_limits_in_four_queries(self):
+        for i in range(12):
+            spot = FishingSpot.objects.create(user=self.user, name=f'Ranta {i}')
+            trips = [Trip.objects.create(owner=self.user, fishing_spot=spot, **trip_data()) for _ in range(10)]
+            Catch.objects.bulk_create([Catch(trip=trips[-1], species=f'Kala {j}', time='12:00') for j in range(10)])
+        with self.assertNumQueries(4):
+            data = ai.spots_for(self.user, '')
+        self.assertEqual(data['total_places'], 12)
+        self.assertEqual(len(data['places']), 10)
+        for spot in data['places']:
+            self.assertEqual(spot['total_trips'], 10)
+            self.assertLessEqual(spot['included_trips'], 8)
+            self.assertTrue(spot['history'])
+            first = spot['history'][0]
+            self.assertEqual(first['catch_count'], 10)
+            self.assertEqual([c['species'] for c in first['catches']], [f'Kala {j}' for j in range(8)])

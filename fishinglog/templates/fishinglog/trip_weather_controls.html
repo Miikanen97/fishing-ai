@@ -1,0 +1,11 @@
+<div class="col-12"><div class="bg-light border rounded p-3">
+<div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="auto-weather" checked><label class="form-check-label" for="auto-weather">Hae sää automaattisesti päivämäärän, aloitusajan ja paikan syöttämisen jälkeen</label></div>
+<button type="button" id="fetch-weather" class="btn btn-outline-primary" data-url="{% url 'fishinglog:weather_lookup' %}">Hae sää</button>
+<details class="mt-2"><summary>Tietoja säätiedoista</summary><p class="small text-secondary mt-2 mb-1">Automaattinen haku säilyttää käsin täytetyt kentät. Painike päivittää myös ne. Sääkuvaus on yhteenveto saatavilla olevista pilvisyys- ja sadetiedoista. Reissun voi aina tallentaa ilman säätietoja.</p>
+<p class="small text-secondary mb-1">Paikkahaku: Ilmatieteen laitos. Kyyveden edustava piste: <a href="https://www.openstreetmap.org/relation/303354">© OpenStreetMap contributors</a>, <a href="https://www.openstreetmap.org/copyright">ODbL</a>. Tarkista koordinaatit ennen tallennusta.</p>
+<p class="small text-secondary mt-2 mb-1">Haku käyttää päivämäärää ja aloitusaikaa Suomen ajassa. Havainto tai ennuste valitaan enintään tunnin päästä. Haetut arvot korvaavat vastaavat sääkentät; puuttuvat tiedot säilyvät ennallaan.</p>
+<p class="small text-secondary mb-1">Lähde: <a href="https://www.ilmatieteenlaitos.fi/avoin-data" target="_blank" rel="noopener">Ilmatieteen laitoksen avoin data</a>. Havaintoasema voi olla enintään 50 km päässä. Ennusteen saatavuus on yleensä noin 10 päivää.</p>
+<div id="weather-status" role="status" aria-live="polite" class="small mt-2"></div>
+<div id="weather-source" class="small text-secondary mt-2">{{ form.weather_source.value|default:"" }}</div>
+</details><p id="trip-weather-error" role="status" class="small text-warning mb-0"></p><noscript>Säähaku tarvitsee JavaScriptin. Voit täyttää säätiedot käsin.</noscript>
+</div></div>

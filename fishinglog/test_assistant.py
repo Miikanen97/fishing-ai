@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 from django.core.cache import cache
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
@@ -236,6 +236,7 @@ class UsageLimitTests(TestCase):
 
 
 class KeyDiagnosticsTests(TestCase):
+    @override_settings(DEBUG=True)
     def test_diagnostics_read_current_environment_without_calls_or_key_disclosure(self):
         from io import StringIO
         from django.core.management import call_command

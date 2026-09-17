@@ -20,7 +20,7 @@
 {{ field }}
 {% if field.name == 'wind_direction' %}<div id="wind-compass" class="form-text" aria-live="polite"></div>{% endif %}
 {% if field.help_text %}<div class="form-text" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</div>{% endif %}
-{% if field.errors %}<div class="text-danger small mt-1" id="{{ field.auto_id }}_error">{{ field.errors }}</div>{% endif %}
+{% if field.errors %}<div class="text-danger small mt-1">{{ field.errors }}</div>{% endif %}
 </div>
 {% if field.name == 'weather_place' %}
 <div class="col-12"><div class="bg-light border rounded p-3">

@@ -11,3 +11,5 @@
 .forecast-pressure { font-size:.67rem; color:#607770; margin-top:.5rem; }
 .forecast-expanded summary { color:#14665e; cursor:pointer; min-height:44px; padding:.7rem 0; font-weight:600; font-size:.9rem; }
 @media(min-width:992px) { .forecast-card { flex-basis:calc((100% - 4.55rem)/8); min-width:116px; padding:.7rem; } }
+
+.forecast-strip { position:relative; min-width:0; width:100%; box-sizing:border-box; }

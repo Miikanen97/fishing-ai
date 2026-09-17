@@ -9,3 +9,17 @@ window.addEventListener('pageshow', function () {
   document.querySelector('#assistant-form button[type="submit"]').disabled = false;
   document.getElementById('assistant-progress').textContent = '';
 });
+
+// Presentation helpers only: submission remains an explicit user action.
+document.querySelectorAll('[data-question]').forEach(button => {
+  button.addEventListener('click', () => {
+    const question = document.getElementById('id_question');
+    question.value = button.dataset.question;
+    question.focus();
+  });
+});
+document.getElementById('assistant-spot')?.addEventListener('change', function () {
+  const place = document.getElementById('id_place');
+  place.value = this.value;
+  if (!this.value) place.focus();
+});

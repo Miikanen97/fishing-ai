@@ -1,0 +1,38 @@
+/* Small shared refinements; theme selection remains in theme.js. */
+:root { --focus-ring:#14665e; }
+[data-bs-theme="light"] { --bs-secondary-rgb:88,107,103; }
+[data-bs-theme="light"] .text-warning { color:#8a5700 !important; }
+.navigation-links { display:flex; flex-wrap:wrap; align-items:center; gap:1rem; min-width:0; }
+.navigation-links a, .brand { overflow-wrap:anywhere; }
+#menu-toggle { display:none; }
+#content, .row > *, .card, .form-shell { min-width:0; }
+#content p, #content li, #content label, #content summary { overflow-wrap:anywhere; }
+.form-control, .form-select { min-width:0; max-width:100%; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline:3px solid var(--focus-ring); outline-offset:3px;
+}
+summary { cursor:pointer; }
+.statistics-page .stat-summary strong { line-height:1.2; margin-bottom:.25rem; }
+.statistics-page .stat-bar .progress { background-color:var(--bs-secondary-bg); }
+.statistics-page .stat-bar .progress-bar { background-color:#23776b !important; }
+.statistics-page .stat-bar strong { flex-shrink:0; }
+.statistics-page .list-group-item { overflow-wrap:anywhere; }
+[data-bs-theme="dark"] { --bs-secondary-rgb:173,191,186; --bs-danger-rgb:244,140,150; --bs-success-rgb:117,183,152; --focus-ring:#84dbcb; }
+[data-bs-theme="dark"] .statistics-page .stat-bar .progress-bar { background-color:#65c3b2 !important; }
+@media(max-width:1199.98px) {
+  #site-navigation .brand { width:auto; flex:1 1 0; min-width:0; }
+  #site-navigation #menu-toggle:not([hidden]) { display:inline-block; }
+  .navigation-links { width:100%; }
+  .navigation-enhanced .navigation-links { display:none; }
+  .navigation-enhanced.menu-open .navigation-links { display:flex; }
+  .navigation-links > a { padding:.65rem .4rem; min-height:44px; }
+}
+@media(max-width:575px) {
+  .navigation-links { align-items:stretch; gap:.25rem; }
+  .navigation-links > a { flex:1 1 45%; }
+  .navigation-links form { flex-basis:100%; margin-top:.5rem; }
+  .navigation-links form button { width:100%; }
+  #site-navigation { gap:.5rem !important; }
+  #site-navigation .brand { font-size:1.1rem; }
+  #site-navigation .brand span { font-size:.72rem; }
+}

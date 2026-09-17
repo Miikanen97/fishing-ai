@@ -63,3 +63,30 @@ class StatisticsTests(TestCase):
         self.assertContains(response, 'Paino- ja pituusennätys kuuluvat eri kaloille.')
         self.assertEqual(response.context['overall']['heaviest'].species,'Kuha')
         self.assertEqual(response.context['overall']['longest'].species,'Hauki')
+
+    def test_place_counts_use_constant_queries(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        user = get_user_model().objects.create_user('queries')
+        self.client.force_login(user)
+        url = reverse('fishinglog:statistics')
+        with CaptureQueriesContext(connection) as before:
+            self.client.get(url)
+        for i in range(12):
+            spot = FishingSpot.objects.create(user=user, name=f'Ranta {i}')
+            trip = Trip.objects.create(owner=user, fishing_spot=spot, **trip_data())
+            Catch.objects.create(trip=trip, species='Ahven', time='12:00')
+        with CaptureQueriesContext(connection) as after:
+            response = self.client.get(url)
+        self.assertEqual(len(before), len(after))
+        self.assertLessEqual(len(after), 6)
+        self.assertEqual(len(response.context['spots']), 12)
+        self.assertTrue(all(s['trips'] == 1 and s['count'] == 1 for s in response.context['spots']))
+
+    def test_empty_statistics_have_action_and_no_empty_charts(self):
+        user = get_user_model().objects.create_user('empty-charts')
+        self.client.force_login(user)
+        response = self.client.get(reverse('fishinglog:statistics'))
+        self.assertContains(response, '+ Lisää ensimmäinen reissu')
+        self.assertNotContains(response, 'class="progress-bar')
+        self.assertContains(response, 'Ei vielä saaliita.')

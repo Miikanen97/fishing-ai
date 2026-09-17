@@ -7,7 +7,9 @@ from django.contrib import messages
 
 from django.core.paginator import Paginator
 
-from django.db.models import Count
+from django.db.models import Count, Q
+from .trip_history import TripFilterForm, add_species_summaries
+from .trip_presentation import measurement
 
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -65,7 +67,7 @@ def home(request):
 
     trips = Trip.objects.filter(owner=request.user).annotate(catch_count=Count('catches')).order_by('-date', '-start_time', '-pk')
 
-    return render(request, 'fishinglog/home.html', {'trips': trips[:5], 'trip_count': trips.count(), 'catch_count': Catch.objects.filter(trip__owner=request.user).count(), **home_weather(request.user)})
+    return render(request, 'fishinglog/home.html', {'trips': add_species_summaries(trips[:5], request.user), 'trip_count': trips.count(), 'catch_count': Catch.objects.filter(trip__owner=request.user).count(), **home_weather(request.user)})
 
 
 
@@ -75,10 +77,33 @@ def home(request):
 
 def trip_list(request):
 
-    page = Paginator(Trip.objects.filter(owner=request.user).annotate(catch_count=Count('catches')).order_by('-date', '-start_time', '-pk'), 12).get_page(request.GET.get('page'))
-
-    return render(request, 'fishinglog/trip_list.html', {'trips': page, 'page_obj': page})
-
+    trips = Trip.objects.filter(owner=request.user).annotate(catch_count=Count('catches'))
+    filters = TripFilterForm(request.GET)
+    if filters.is_valid():
+        data = filters.cleaned_data
+        if data.get('q'):
+            trips = trips.filter(Q(lake__icontains=data['q']) | Q(location__icontains=data['q']) | Q(fishing_spot__name__icontains=data['q'], fishing_spot__user=request.user))
+        if data.get('species'):
+            ids = Catch.objects.filter(trip__owner=request.user, species__iexact=data['species']).values('trip_id')
+            trips = trips.filter(pk__in=ids)
+        if data.get('outcome') == 'caught':
+            trips = trips.filter(catch_count__gt=0)
+        elif data.get('outcome') == 'empty':
+            trips = trips.filter(catch_count=0, no_catch=True)
+        elif data.get('outcome') == 'unknown':
+            trips = trips.filter(catch_count=0, no_catch=False)
+        if data.get('start'):
+            trips = trips.filter(date__gte=data['start'])
+        if data.get('end'):
+            trips = trips.filter(date__lte=data['end'])
+    else:
+        trips = trips.none()
+    page = Paginator(trips.order_by('-date', '-start_time', '-pk'), 12).get_page(request.GET.get('page'))
+    page.object_list = add_species_summaries(page.object_list, request.user)
+    params = request.GET.copy()
+    params.pop('page', None)
+    return render(request, 'fishinglog/trip_list.html', {'trips': page, 'page_obj': page,
+        'filters':filters, 'filter_query':params.urlencode(), 'active_filters':[(field.label, field.value()) for field in filters if field.value()]})
 
 
 
@@ -87,7 +112,11 @@ def trip_list(request):
 
 def trip_detail(request, pk):
 
-    trip = get_object_or_404(Trip.objects.filter(owner=request.user).prefetch_related('catches'), pk=pk)
+    trip = get_object_or_404(Trip.objects.filter(owner=request.user).select_related('fishing_spot').prefetch_related('catches'), pk=pk)
+
+    for catch in trip.catches.all():
+        catch.display_weight = measurement(catch.weight)
+        catch.display_length = measurement(catch.length)
 
     return render(request, 'fishinglog/trip_detail.html', {'trip': trip})
 
@@ -135,7 +164,7 @@ def trip_form(request, pk=None):
 
         return redirect(trip)
 
-    return render(request, 'fishinglog/form.html', {'form': form, 'title': 'Muokkaa kalastusreissua' if trip else 'Lisää kalastusreissu', 'cancel_url': trip.get_absolute_url() if trip else '/'})
+    return render(request, 'fishinglog/trip_form.html', {'form': form, 'title': 'Muokkaa kalastusreissua' if trip else 'Lisää kalastusreissu', 'cancel_url': trip.get_absolute_url() if trip else '/'})
 
 
 

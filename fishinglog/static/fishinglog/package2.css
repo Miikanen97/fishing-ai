@@ -1,0 +1,12 @@
+/* Shared presentation for home, saved places and assistant. */
+.spot-list-info, .forecast-strip { min-width:0; }
+.spot-list-info { overflow-wrap:anywhere; }
+#assistant-form [data-question] { min-height:44px; white-space:normal; text-align:left; }
+#assistant-form select, #assistant-form textarea { max-width:100%; }
+#assistant-form summary { cursor:pointer; padding:.5rem 0; }
+@media(max-width:575px) {
+  #assistant-form button[type="submit"] { width:100%; min-height:44px; }
+  #assistant-progress { display:block; margin:.5rem 0 0!important; }
+  .hero h1 { font-size:1.6rem; }
+  .spot-list-actions a { min-height:44px; display:inline-flex; align-items:center; }
+}

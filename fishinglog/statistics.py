@@ -2,6 +2,7 @@ from collections import Counter, defaultdict
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.shortcuts import render
+from django.db.models import Count, Q
 from .models import Trip, Catch, FishingSpot
 
 
@@ -14,7 +15,7 @@ def bars(counter):
 @login_required
 def statistics(request):
     trips = Trip.objects.filter(owner=request.user)
-    fish = list(Catch.objects.filter(trip__owner=request.user).select_related('trip').order_by('pk'))
+    fish = list(Catch.objects.filter(trip__owner=request.user).order_by('pk'))
     productive = {catch.trip_id for catch in fish}
     species = Counter(c.species for c in fish)
     by_species = defaultdict(list)
@@ -30,12 +31,12 @@ def statistics(request):
         heavy = [c for c in items if c.weight is not None and c.weight > 0]
         long = [c for c in items if c.length is not None and c.length > 0]
         return {'heaviest':max(heavy, key=lambda c:c.weight, default=None), 'longest':max(long, key=lambda c:c.length, default=None)}
-    spots = []
-    for spot in FishingSpot.objects.filter(user=request.user):
-        ids = set(trips.filter(fishing_spot=spot).values_list('pk', flat=True))
-        if not ids:
-            continue
-        spots.append({'name':spot.name, 'trips':len(ids), 'count':sum(c.trip_id in ids for c in fish)})
+    # Aggregate both counts once; foreign legacy links are excluded independently.
+    spot_rows = FishingSpot.objects.filter(user=request.user).annotate(
+        own_trips=Count('trips', filter=Q(trips__owner=request.user), distinct=True),
+        own_catches=Count('trips__catches', filter=Q(trips__owner=request.user), distinct=True),
+    ).filter(own_trips__gt=0)
+    spots = [{'name': spot.name, 'trips': spot.own_trips, 'count': spot.own_catches} for spot in spot_rows]
     spots.sort(key=lambda row:row['count'], reverse=True)
     total = trips.count()
     empty = trips.filter(no_catch=True).exclude(pk__in=productive).count()

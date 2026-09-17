@@ -1,3 +1,5 @@
+from django.conf import settings
+from .models import FishingSpot
 from django.contrib.auth.decorators import login_required
 from .assistant_limits import reserve, release, record_dispatch
 from django.shortcuts import render
@@ -20,8 +22,11 @@ def assistant(request):
             reservation = reserve(request.user)
             result = advise(request.user, form.cleaned_data['question'], form.cleaned_data['place'], before_send=lambda: record_dispatch(reservation))
         except AssistantError as exc:
-            form.add_error(None, str(exc))
+            message = str(exc)
+            if not settings.DEBUG and 'OPENAI_API_KEY' in message:
+                message = 'Kalastusavustaja ei ole juuri nyt käytettävissä. Yritä myöhemmin uudelleen.'
+            form.add_error(None, message)
         finally:
             if reservation is not None:
                 release(reservation)
-    return render(request, 'fishinglog/assistant.html', {'form': form, 'result': result, 'summary': answer_summary(result), 'api_key_configured': api_key_configured()})
+    return render(request, 'fishinglog/assistant.html', {'development': settings.DEBUG, 'saved_spots': FishingSpot.objects.filter(user=request.user).only('id', 'name'), 'form': form, 'result': result, 'summary': answer_summary(result), 'api_key_configured': api_key_configured()})
