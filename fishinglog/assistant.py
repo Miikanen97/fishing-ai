@@ -16,8 +16,7 @@ from .home_weather import upcoming_weather
 logger = logging.getLogger(__name__)
 
 def log_weather_failure(exc):
-    reason = "no_data" if isinstance(exc, weather.NoWeatherData) else "service_or_location_error"
-    logger.debug("Assistant forecast failed: reason=%s", reason)
+    weather.log_failure(exc)
 
 
 
@@ -179,6 +178,7 @@ def choose_place(user, plan, selected):
     return trip.weather_place or (linked.name if linked else '') or trip.lake or trip.location, f'Viimeisin sopiva reissu: {trip.lake}'
 
 
+@weather.diagnostic('forecast')
 def forecast_window(place, period, now):
     if period == 'now':
         return [{'target': now.isoformat(), **weather.fetch_weather(place, now)}], []

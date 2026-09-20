@@ -189,3 +189,11 @@ SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'fishinglog:home'
 LOGOUT_REDIRECT_URL = 'fishinglog:home'
+
+# Dedicated sanitized FMI diagnostics, visible on Railway without DEBUG logging.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'fmi_console': {'class': 'logging.StreamHandler', 'level': 'WARNING'}},
+    'loggers': {'fishinglog.fmi': {'handlers': ['fmi_console'], 'level': 'WARNING', 'propagate': False}},
+}

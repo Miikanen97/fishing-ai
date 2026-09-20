@@ -4,6 +4,9 @@ from decimal import Decimal, InvalidOperation
 from hashlib import sha256
 from math import asin, cos, radians, sin, sqrt, isfinite
 import re
+import logging
+from functools import wraps
+from time import monotonic
 from urllib.parse import parse_qs, urlparse
 from xml.etree.ElementTree import ParseError
 
@@ -46,6 +49,69 @@ class NoWeatherData(WeatherError):
     pass
 
 
+# Only fixed diagnostic categories are emitted; never exception messages/tracebacks.
+logger = logging.getLogger('fishinglog.fmi')
+FMI_CODES = frozenset({'InvalidParameterValue', 'MissingParameterValue', 'OperationNotSupported',
+    'OperationProcessingFailed', 'NoApplicableCode', 'OptionNotSupported', 'VersionNegotiationFailed',
+    'InvalidValue', 'ParsingFailed', 'OperationParsingFailed'})
+
+
+class DiagnosticXML(bytes):
+    """Preserve the bytes API while carrying request metadata into the parser."""
+    pass
+
+
+def log_failure(exc, stage='forecast', duration_ms=None, http_status=None, fmi_code=None):
+    if getattr(exc, '_fmi_logged', False):
+        return
+    cause = exc.__cause__ or exc
+    kind = 'no_data' if isinstance(exc, NoWeatherData) else 'service_error'
+    for cls, label in [(requests.exceptions.SSLError, 'tls_error'),
+                       (requests.Timeout, 'timeout'), (requests.ConnectionError, 'connection_error'),
+                       (requests.HTTPError, 'http_error'), (requests.RequestException, 'request_error'),
+                       (ParseError, 'xml_error'), (DefusedXmlException, 'xml_error'),
+                       (ValueError, 'invalid_data'), (KeyError, 'invalid_data'),
+                       (IndexError, 'invalid_data'), (TypeError, 'invalid_data')]:
+        if isinstance(cause, cls):
+            kind = label
+            break
+    status = http_status if type(http_status) is int and 100 <= http_status <= 599 else None
+    if status is None:
+        status = getattr(exc, '_fmi_status', None)
+    if type(status) is not int or not 100 <= status <= 599:
+        status = None
+    if status is not None and status >= 400:
+        kind = 'http_error'
+    code = fmi_code if fmi_code in FMI_CODES else getattr(exc, '_fmi_code', None)
+    code = code if code in FMI_CODES else None
+    if code:
+        kind = 'fmi_exception'
+    elapsed = round(max(0, duration_ms), 1) if type(duration_ms) in (int, float) else None
+    logger.warning('FMI failure stage=%s type=%s http_status=%s fmi_code=%s duration_ms=%s',
+        stage if stage in {'location', 'wfs_request', 'parse', 'forecast'} else 'forecast',
+        kind, status, code, elapsed)
+    exc._fmi_logged = True
+
+
+def diagnostic(stage):
+    def decorate(function):
+        @wraps(function)
+        def wrapped(*args, **kwargs):
+            started = monotonic()
+            try:
+                result = function(*args, **kwargs)
+                if stage == 'wfs_request':
+                    result.duration_ms = (monotonic() - started) * 1000
+                return result
+            except WeatherError as exc:
+                xml = args[0] if stage == 'parse' and args else None
+                log_failure(exc, stage, getattr(xml, 'duration_ms', (monotonic() - started) * 1000),
+                    getattr(xml, 'http_status', None))
+                raise
+        return wrapped
+    return decorate
+
+
 def compass(value):
     if value is None:
         return ''
@@ -64,6 +130,7 @@ def describe_weather(values):
     return 'Yhteenveto sääarvoista: ' + '; '.join(parts) if parts else ''
 
 
+@diagnostic('location')
 def resolve_place(place):
     coords = coordinates(place)
     if coords:
@@ -82,13 +149,17 @@ def resolve_place(place):
                           'format': 'json', 'timesteps': 1}, timeout=(5, 10), stream=True,
                           headers={'User-Agent': 'FishingLog/1.0'}, allow_redirects=False) as response:
             if response.status_code == 400:
-                raise WeatherError('Paikkaa ei löytynyt. Kokeile kunnan nimeä tai koordinaatteja (esim. 61.99, 26.65).')
+                error = WeatherError('Paikkaa ei löytynyt. Kokeile kunnan nimeä tai koordinaatteja (esim. 61.99, 26.65).')
+                error._fmi_status = response.status_code
+                raise error
             response.raise_for_status()
             content = bytearray()
             for chunk in response.iter_content(8192):
                 content.extend(chunk)
                 if len(content) > 100000:
-                    raise WeatherError('Paikkapalvelun vastaus oli liian suuri. Tarkenna paikkaa.')
+                    error = WeatherError('Paikkapalvelun vastaus oli liian suuri. Tarkenna paikkaa.')
+                    error._fmi_status = response.status_code
+                    raise error
             import json
             data = json.loads(content)
             row = data[0]
@@ -97,7 +168,9 @@ def resolve_place(place):
                 raise ValueError
             result = {'name': str(row['name'])[:200], 'latitude': lat, 'longitude': lon, 'source': 'Ilmatieteen laitos'}
     except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as exc:
-        raise WeatherError('Paikan sijaintia ei saatu haettua. Tarkista paikka ja verkkoyhteys. Voit tallentaa reissun ilman säätietoja.') from exc
+        error = WeatherError('Paikan sijaintia ei saatu haettua. Tarkista paikka ja verkkoyhteys. Voit tallentaa reissun ilman säätietoja.')
+        error._fmi_status = getattr(locals().get('response'), 'status_code', None)
+        raise error from exc
     cache.set(key, result, 86400)
     return result
 
@@ -121,31 +194,43 @@ def distance(a, b):
     return 6371 * 2 * asin(min(1, sqrt(h)))
 
 
+@diagnostic('wfs_request')
 def download(params):
     try:
         with requests.get(ENDPOINT, params=params, timeout=(5, 15), stream=True,
                           headers={'User-Agent': 'FishingLog/1.0'}, allow_redirects=False) as response:
             # WFS commonly returns an XML ExceptionReport with HTTP 400.
             if response.status_code not in (200, 400):
-                raise WeatherError('Ilmatieteen laitoksen sääpalvelu ei vastaa. Yritä myöhemmin.')
+                error = WeatherError('Ilmatieteen laitoksen sääpalvelu ei vastaa. Yritä myöhemmin.')
+                error._fmi_status = response.status_code
+                raise error
             chunks, size = [], 0
             for chunk in response.iter_content(16384):
                 size += len(chunk)
                 if size > MAX_BYTES:
-                    raise WeatherError('Sääpalvelun vastaus oli liian suuri. Tarkenna paikkaa.')
+                    error = WeatherError('Sääpalvelun vastaus oli liian suuri. Tarkenna paikkaa.')
+                    error._fmi_status = response.status_code
+                    raise error
                 chunks.append(chunk)
-            return b''.join(chunks)
+            result = DiagnosticXML(b''.join(chunks))
+            result.http_status = response.status_code
+            return result
     except requests.RequestException as exc:
-        raise WeatherError('Sääpalveluun ei saatu yhteyttä. Tarkista verkkoyhteys ja yritä uudelleen.') from exc
+        error = WeatherError('Sääpalveluun ei saatu yhteyttä. Tarkista verkkoyhteys ja yritä uudelleen.')
+        error._fmi_status = getattr(locals().get('response'), 'status_code', None)
+        raise error from exc
 
 
+@diagnostic('parse')
 def parse_response(xml, target, forecast, coords=None):
     try:
         root = ElementTree.fromstring(xml)
     except (ParseError, DefusedXmlException) as exc:
         raise WeatherError('Sääpalvelu palautti virheellisen vastauksen. Yritä myöhemmin.') from exc
     if root.tag.endswith('ExceptionReport'):
-        raise WeatherError('FMI ei voinut käsitellä hakua. Tarkista paikannimi tai käytä koordinaatteja; myös ajankohdan data voi puuttua.')
+        error = WeatherError('FMI ei voinut käsitellä hakua. Tarkista paikannimi tai käytä koordinaatteja; myös ajankohdan data voi puuttua.')
+        error._fmi_code = next((node.get('exceptionCode') for node in root.iter() if node.get('exceptionCode') in FMI_CODES), None)
+        raise error
     mapping = FORECAST_PARAMS if forecast else OBS_PARAMS
     stations = {}
     for series in root.findall('.//omso:PointTimeSeriesObservation', NS):

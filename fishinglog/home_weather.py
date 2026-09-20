@@ -6,6 +6,7 @@ from .models import FishingProfile
 from . import weather
 
 
+@weather.diagnostic('forecast')
 def upcoming_weather(place):
     key = 'home-forecast-v1:' + sha256(place.encode()).hexdigest()
     cached = cache.get(key)

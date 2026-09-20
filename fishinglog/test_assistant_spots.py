@@ -86,11 +86,11 @@ class AssistantSpotTests(TestCase):
             network.assert_not_called()
 
     def test_safe_failure_logging(self):
-        with self.assertLogs(ai.logger, level='DEBUG') as logs:
+        with self.assertLogs('fishinglog.fmi', level='WARNING') as logs:
             ai.log_weather_failure(ai.weather.WeatherError('SECRET_KEY PRIVATE_LOCATION'))
         self.assertNotIn('SECRET', str(logs.output))
         self.assertNotIn('PRIVATE', str(logs.output))
-        self.assertIn('service_or_location_error', str(logs.output))
+        self.assertIn('service_error', str(logs.output))
 
     @patch('fishinglog.assistant.call_openai', return_value=ANSWER)
     @patch('fishinglog.assistant.forecast_window', return_value=([{'target': 'tomorrow'}], []))
