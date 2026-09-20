@@ -88,7 +88,24 @@ def guidance(samples, coords, history, plan, now, name=''):
         weather_score -= min(rain, 10)/5 if rain is not None else 0
         weather_score -= max(0, gust-8)/2 if gust is not None else 0
         pressure = pressures.get(moment, {'value': None, 'trend': None, 'strength': None, 'adjustment': 0})
+        # Presentation-only audit; do not send these extra fields to the model.
+        factors = [
+            ('Valoisuus / vuorokaudenaika', -2 if night else 1,
+             f'{light} / {bucket}'),
+            ('Kalastustapa ja aamu / ilta / hämärä', time_score - (-2 if night else 1),
+             plan['method'] or 'Kalastustapaa ei määritetty'),
+            ('Tuuli', -(min(wind, 15)/3 if wind is not None else 1),
+             f'{wind:g} m/s' if wind is not None else 'Tieto puuttuu: nykyinen varovaisuusvähennys'),
+            ('Puuskat', -max(0, gust-8)/2 if gust is not None else 0,
+             f'{gust:g} m/s' if gust is not None else 'Ei tietoa'),
+            ('Sade', -min(rain, 10)/5 if rain is not None else 0,
+             f'{rain:g} mm/h' if rain is not None else 'Ei tietoa'),
+            ('Ilmanpaine ja painetrendi', pressure['adjustment'], describe_pressure(pressure)),
+            ('Oman historian tuki', min(support, 3)*2,
+             f'{support} tukevaa reissua samalta vuorokaudenajalta; enintään kolme tuo pisteitä'),
+        ]
         rows.append({'pressure': pressure, 'target': moment.isoformat(), 'place': name, 'light': light,
+                     'score_factors': factors, 'requested_species': plan['species'],
                      'period': bucket, 'supporting_trips': support, 'eligible': allowed,
                      'priority': round(time_score + min(support, 3)*2 + weather_score + pressure['adjustment'], 2)})
     return rows

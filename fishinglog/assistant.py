@@ -13,6 +13,7 @@ from .models import Trip, FishingSpot, Catch
 from . import weather
 from .home_weather import upcoming_weather
 from .assistant_places import identify_place, matches
+from .assistant_scoring import breakdown
 from .assistant_time import guidance, constrain_answer, pressure_summary
 
 logger = logging.getLogger(__name__)
@@ -327,7 +328,8 @@ def advise(user, question, selected_place='', before_send=None):
             relevant = spot['history'] if spot else [t for t in history['recent_trips'] if label and t.get('lake', '').casefold() == label.casefold()]
             time_rows.extend(guidance(forecast_samples, coords, relevant, plan, now, label))
     # Keep prompt size bounded; retain the full local list for answer validation.
-    time_options = sorted((r for r in time_rows if r['eligible']), key=lambda r: r['priority'], reverse=True)[:12]
+    time_options = [{k: v for k, v in row.items() if k not in ('score_factors', 'requested_species')}
+                    for row in sorted((r for r in time_rows if r['eligible']), key=lambda r: r['priority'], reverse=True)[:12]]
     answer = call_openai(ANSWER_PROMPT, {'question': question, 'plan': plan, 'now': now.isoformat(),
         'place': place, 'time_guidance': time_options, 'history': history, 'saved_spots': saved_spots, 'spot_forecasts': spot_forecasts, 'weather': samples, 'missing_times': missing, 'weather_error': warning}, ANSWER, 1100, before_send=before_send)
     answer = dict(answer)
@@ -337,6 +339,7 @@ def advise(user, question, selected_place='', before_send=None):
         answer['uncertainty'] += ' Paikkakohtaista historiaa on vähän: mukana on alle viisi reissua kustakin paikasta.'
     if warning:
         answer.update(score=None, best_time='Ei arvioitavissa', recommendation='Lähtösuositusta ei voida vahvistaa ilman säätietoja.')
+    answer['score_breakdown'] = breakdown(answer, time_rows)
     return {'spot_history_summary': [{'name': spot['name'], 'included_trips': spot['included_trips'], 'total_trips': spot['total_trips']} for spot in saved_spots['places']], 'spot_forecasts': spot_forecasts, 'answer': answer, 'place': place, 'place_source': place_source, 'warning': warning,
             'history_count': history['included_trips'], 'history_total': history['total_trips'],
             'samples': samples, 'missing_count': len(missing), 'fetched_at': now}
