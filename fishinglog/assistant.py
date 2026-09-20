@@ -6,12 +6,13 @@ import re
 from datetime import datetime, time, timedelta, timezone as utc
 from collections import Counter
 import requests
-from django.db.models import Count, F, Q, Window, Prefetch, prefetch_related_objects
+from django.db.models import Case, When, Count, F, Q, Window, Prefetch, prefetch_related_objects
 from django.db.models.functions import RowNumber
 from django.utils import timezone
 from .models import Trip, FishingSpot, Catch
 from . import weather
 from .home_weather import upcoming_weather
+from .assistant_places import identify_place, matches
 from .assistant_time import guidance, constrain_answer, pressure_summary
 
 logger = logging.getLogger(__name__)
@@ -112,12 +113,14 @@ def history_for(user):
             'limits': 'Enintään 40 uusinta reissua ja 8 saalisryhmää/reissu; vain yllä oleva otos. Puuttuva saalistieto ei tarkoita tyhjää reissua.'}
 
 
-def spots_for(user, question):
+def spots_for(user, question, preferred_name=None):
     """Bounded independent ownership filters, including inconsistent legacy links."""
+    order = [Case(When(name=preferred_name, then=0), default=1)] if preferred_name else []
     spots = list(FishingSpot.objects.filter(user=user).annotate(
         assistant_total_trips=Count('trips', filter=Q(trips__owner=user))
-    ).order_by('-created_at', '-pk')[:50])
-    spots.sort(key=lambda spot: spot.name.casefold() not in question.casefold())
+    ).order_by(*order, '-created_at', '-pk')[:50])
+    named = matches(question, [spot.name for spot in spots])
+    spots.sort(key=lambda spot: spot.name != preferred_name if preferred_name else spot.name not in named)
     # Sliced prefetches use per-parent limits, not an unbounded history download.
     trip_sample = Trip.objects.filter(owner=user).annotate(
         assistant_catch_count=Count('catches')
@@ -216,23 +219,13 @@ def forecast_window(place, period, now):
     return samples, missing
 
 
-def interpret_question(question):
+def interpret_question(question, saved_names=()):
     """Local routing: no paid call is used to choose weather inputs."""
     q = question.casefold()
     period = ('next3' if re.search(r'3 päiv|kolme|kolmen|lähiaiko', q) else
               'tomorrow' if 'huomenna' in q else 'today' if 'tänään' in q else
               'now' if 'nyt' in q else 'history' if re.search(r'olen|reissu|viehee|saali|saanut', q) else 'clarify')
-    place = ''
-    aliases = {'kyyvedelle': 'Kyyvesi', 'kyyvedellä': 'Kyyvesi', 'kyyvesi': 'Kyyvesi',
-               'jyväskylässä': 'Jyväskylä', 'kangasniemelle': 'Kangasniemi', 'kangasniemellä': 'Kangasniemi'}
-    for word in re.findall(r'[A-Za-zÅÄÖåäö-]+', question):
-        lower = word.casefold()
-        if lower in aliases:
-            place = aliases[lower]
-            break
-        if word[0].isupper() and lower not in {'mihin','minne','kannattaako','mikä','milloin','millaisella','millä','missä','vertaa','olen','tänään','huomenna','nyt'}:
-            place = re.sub(r'(lle|llä|ssa|ssä)$', '', word)
-            break
+    place = identify_place(question, saved_names)
     method = 'jiggaus' if 'jig' in q else 'uistelu' if 'uistel' in q else ''
     species = 'kuha' if 'kuh' in q else 'hauki' if 'hauk' in q else 'ahven' if 'ahven' in q else ''
     return {'period': period, 'place': place, 'method': method, 'species': species}
@@ -275,14 +268,12 @@ def advise(user, question, selected_place='', before_send=None):
     if not user.is_authenticated:
         raise AssistantError('Kirjaudu sisään.')
     now = timezone.localtime()
-    plan = interpret_question(question)
+    saved_names = list(FishingSpot.objects.filter(user=user).values_list('name', flat=True))
+    plan = interpret_question(question, saved_names)
     if plan['period'] == 'clarify':
         raise AssistantError('Tarkenna kysymystä: voit kysyä historiasta, nykyhetkestä, tästä päivästä, huomisesta tai seuraavista kolmesta päivästä.')
     history = history_for(user)
-    saved_spots = spots_for(user, question)
-    named = [spot for spot in saved_spots['places'] if spot['name'].casefold() in question.casefold()]
-    if len(named) == 1:
-        plan['place'] = named[0]['name']
+    saved_spots = spots_for(user, question, preferred_name=plan['place'] or None)
     place, place_source = choose_place(user, plan, selected_place)
     samples, missing, warning = [], [], ''
     spot_forecasts = []
