@@ -12,6 +12,7 @@ from django.utils import timezone
 from .models import Trip, FishingSpot, Catch
 from . import weather
 from .home_weather import upcoming_weather
+from .assistant_time import guidance, constrain_answer, pressure_summary
 
 logger = logging.getLogger(__name__)
 
@@ -250,6 +251,17 @@ Suosituksessa kerro kannattaako lähteä, varovainen arvio 1–10, paras päivä
 kalastustapa ja mahdollinen kohdekala. Arvio ei ole saalistodennäköisyys tai turvallisuustakuu.
 Valitse paras aika VAIN annetuista tulevista sääajoista, kerro että kyse on otoksen vertailusta.
 Huomioi lämpötila, tuuli/puuskat/suunta, paine, pilvet, sade ja historian kellonajat sekä saaliit.
+Ajan valinnassa käytä time_guidance-vaihtoehtoja, jos niitä on. priority on varovainen vertailuheuristiikka, ei kalansaannin todennäköisyys.
+Arvioi sää yhdessä vuorokaudenajan, valoisuuden, plan.method-kalastustavan ja vain käyttäjän ilmoittaman plan.species-kohdekalan kanssa.
+light on koordinaateista laskettu karkea auringon korkeuden luokka, ei mitattu valoisuus: pilvet, veden sameus ja paikallinen horisontti vaikuttavat. unknown tarkoittaa ettei valoisuutta tiedetä.
+Älä valitse yötä pelkän heikomman tuulen vuoksi. Yövaihtoehto vaatii vähintään kahden relevantin oman reissun saalishavainnot kyseiseltä vuorokaudenajalta; tämä on varovainen valintasääntö, ei biologinen väite.
+Aamua, iltaa ja hämärää voi painottaa menetelmän ja havaintojen perusteella, mutta ne eivät ole aina parhaita. Huomioi myös vaaralliset sääolosuhteet ja sano tarvittaessa ettei kannata lähteä.
+Kun plan.species on tyhjä tulevan ajan kysymyksessä, species on tyhjä: älä keksi kohdekalaa myöskään suositustekstiin tai yökalastelun perusteeksi.
+time_guidance.pressure sisältää saman paikan peräkkäisten ennustepisteiden ilmanpaineen ja trendin. Käytä vain laskettua trendiä, älä arvaa puuttuvaa.
+Huomioi painetrendi vain pienenä lisätekijänä: nousu tai lasku ei yksin osoita hyvää kalastusaikaa. adjustment on rajattu välille -0.2…+0.1 eikä ohita yöajan kelpoisuutta.
+Erota ennustettu muutos havainnosta ja huomioi comparison: previous vertaa edeltävään, next seuraavaan pisteeseen. Puuttuva trend ei tarkoita vakaata painetta.
+Kirjoita best_time-arvio muodossa pp.kk.vvvv klo HH:MM Suomen aikaa, jos arvioitavissa; käytä tarkkaa ennustepisteen aikaa.
+Perustele ajan valinta lyhyesti ja erota historian näyttö yleisestä arviosta. supporting_trips on havaintomäärä, ei saalisprosentti.
 Vertaa saalismääriä myös reissujen määrään/kestoon; vieheen käyttöä saaliittomilla reissuilla ei tunneta.
 Älä keksi sääarvoja, paineen trendiä yhdestä mittauksesta, puuttuvia saaliita tai varmoja syysuhteita.
 Alle 5 relevanttia reissua on vähän dataa: kerro se ja käytä vain varovaista sääpohjaista arviota.
@@ -303,9 +315,33 @@ def advise(user, question, selected_place='', before_send=None):
         except weather.WeatherError as exc:
             log_weather_failure(exc)
             warning = 'Sääpalvelusta ei saatu tietoja. Lähtöarviota tai parasta aikaa ei voida vahvistaa.'
+    time_rows = []
+    if plan['period'] != 'history':
+        sources = [(entry['samples'], next((s for s in saved_spots['places'] if s['spot_id'] == entry['spot_id']), None), '')
+                   for entry in spot_forecasts]
+        if not spot_forecasts:
+            label = plan['place'] or selected_place
+            matches = [s for s in saved_spots['places'] if s['name'].casefold() == label.casefold()]
+            sources = [(samples, matches[0] if len(matches) == 1 else None, place)]
+        for forecast_samples, spot, query in sources:
+            if not forecast_samples:
+                continue
+            coords = weather.coordinates(query) if query else None
+            label = spot['name'] if spot else plan['place'] or selected_place
+            if spot and spot['latitude'] is not None and spot['longitude'] is not None:
+                coords = (spot['latitude'], spot['longitude'])
+            if coords is None and query.strip().casefold() == 'kyyvesi':
+                resolved = weather.resolve_place('Kyyvesi')  # existing offline lake point, no network
+                coords = (resolved['latitude'], resolved['longitude'])
+            relevant = spot['history'] if spot else [t for t in history['recent_trips'] if label and t.get('lake', '').casefold() == label.casefold()]
+            time_rows.extend(guidance(forecast_samples, coords, relevant, plan, now, label))
+    # Keep prompt size bounded; retain the full local list for answer validation.
+    time_options = sorted((r for r in time_rows if r['eligible']), key=lambda r: r['priority'], reverse=True)[:12]
     answer = call_openai(ANSWER_PROMPT, {'question': question, 'plan': plan, 'now': now.isoformat(),
-        'place': place, 'history': history, 'saved_spots': saved_spots, 'spot_forecasts': spot_forecasts, 'weather': samples, 'missing_times': missing, 'weather_error': warning}, ANSWER, 1100, before_send=before_send)
+        'place': place, 'time_guidance': time_options, 'history': history, 'saved_spots': saved_spots, 'spot_forecasts': spot_forecasts, 'weather': samples, 'missing_times': missing, 'weather_error': warning}, ANSWER, 1100, before_send=before_send)
     answer = dict(answer)
+    constrain_answer(answer, time_rows, plan)
+    answer['pressure_summary'] = pressure_summary(answer, time_rows)
     if saved_spots['places'] and all(spot['limited_history'] for spot in saved_spots['places']):
         answer['uncertainty'] += ' Paikkakohtaista historiaa on vähän: mukana on alle viisi reissua kustakin paikasta.'
     if warning:

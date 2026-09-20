@@ -37,6 +37,7 @@
 {% if result.warning %}<div class="alert alert-warning py-2" role="status">{{ result.warning }}</div>{% endif %}
 <h3 class="h6">Suositus</h3><p>{{ summary.recommendation|default:'Suositusta ei ole saatavilla.' }}</p>
 <h3 class="h6">Perustelut</h3>
+{% if result.answer.pressure_summary %}<p class="small mb-2">{{ result.answer.pressure_summary }}</p>{% endif %}
 {% for section in summary.sections %}<div class="mb-2"><strong class="small">{{ section.title }}</strong><p class="mb-0" style="white-space:pre-line">{{ section.text }}</p></div>{% empty %}<p style="white-space:pre-line">{{ result.answer.rationale|default:'Perusteluja ei ole saatavilla.' }}</p>{% endfor %}
 {% if result.answer.uncertainty %}<p class="small text-secondary mt-2">{{ result.answer.uncertainty }}</p>{% endif %}
 <div class="border-top pt-2 mt-2"><h3 class="h6">Datapohja</h3>
