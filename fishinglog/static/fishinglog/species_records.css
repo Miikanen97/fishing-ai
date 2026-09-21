@@ -1,0 +1,11 @@
+.species-record-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:.75rem; align-items:start; }
+.species-record-card { min-width:0; overflow:hidden; }
+.species-record-title { margin:0; padding:.85rem 1rem .65rem; overflow-wrap:anywhere; }
+.species-record-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; padding:0 1rem 1rem; }
+.species-record-metric { min-width:0; overflow-wrap:anywhere; }
+.species-record-value { font-size:1.5rem; line-height:1.25; font-weight:700; margin:0 0 .3rem; }
+.species-record-value span { font-size:.9rem; font-weight:500; }
+.species-record-photo { display:block; width:100%; height:90px; object-fit:cover; border-radius:.4rem; margin-top:.5rem; }
+.species-record-shared-photo { display:block; width:100%; height:120px; object-fit:cover; margin-bottom:.6rem; }
+@media (min-width:768px) { .species-record-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (min-width:1200px) { .species-record-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }

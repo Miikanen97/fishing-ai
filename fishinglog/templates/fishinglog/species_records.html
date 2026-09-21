@@ -1,0 +1,21 @@
+<h3 class="h6">Ennätykset lajeittain</h3>
+<div class="species-record-grid">
+{% for row in records %}
+<article class="species-record-card border rounded bg-light">
+<h4 class="h5 species-record-title">{{ row.name }}</h4>
+{% if row.heaviest and row.longest and row.heaviest.pk == row.longest.pk %}
+{% if row.heaviest.photo %}<img class="species-record-shared-photo" src="{% url 'fishinglog:catch_photo' row.heaviest.pk %}" alt="{{ row.name }}: paino- ja pituusennätyksen saaliskuva" loading="lazy">{% endif %}
+<p class="small text-secondary px-3 mb-2">Sama kala: molemmat ennätykset.</p>
+<div class="species-record-pair">
+{% include 'fishinglog/species_record_metric.html' with fish=row.heaviest metric='weight' show_photo=False only %}
+{% include 'fishinglog/species_record_metric.html' with fish=row.longest metric='length' show_photo=False only %}
+</div>
+{% else %}
+<div class="species-record-pair">
+{% include 'fishinglog/species_record_metric.html' with fish=row.heaviest metric='weight' show_photo=True only %}
+{% include 'fishinglog/species_record_metric.html' with fish=row.longest metric='length' show_photo=True only %}
+</div>
+{% endif %}
+</article>
+{% empty %}<p class="small text-secondary mb-0">Ei vielä saaliita.</p>{% endfor %}
+</div>

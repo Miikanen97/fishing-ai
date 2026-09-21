@@ -4,6 +4,7 @@ from django.views.decorators.cache import never_cache
 from django.shortcuts import render
 from django.db.models import Count, Q
 from .models import Trip, Catch, FishingSpot
+from .trip_presentation import measurement
 
 
 def bars(counter):
@@ -22,6 +23,8 @@ def statistics(request):
     periods = Counter({'Aamu 05–10':0, 'Päivä 10–16':0, 'Ilta 16–22':0, 'Yö 22–05':0})
     lures = Counter()
     for catch in fish:
+        catch.display_weight = measurement(catch.weight)
+        catch.display_length = measurement(catch.length)
         by_species[catch.species].append(catch)
         hour = catch.time.hour
         periods['Aamu 05–10' if 5 <= hour < 10 else 'Päivä 10–16' if 10 <= hour < 16 else 'Ilta 16–22' if 16 <= hour < 22 else 'Yö 22–05'] += 1

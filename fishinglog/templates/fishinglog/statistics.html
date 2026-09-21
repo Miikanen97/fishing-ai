@@ -1,6 +1,6 @@
 {% extends 'fishinglog/base.html' %}
 {% load static %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'fishinglog/record_cards.css' %}">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'fishinglog/record_cards.css' %}"><link rel="stylesheet" href="{% static 'fishinglog/species_records.css' %}">{% endblock %}
 {% block title %}Tilastot{% endblock %}
 {% block content %}<div class="statistics-page"><h1>Tilastot</h1><p class="text-secondary">Oma kalastushistoriasi</p>
 {% if total < 5 %}<p class="alert alert-info">Havaintoja on vielä vähän. Tilastot kuvaavat kirjauksiasi, eivät varmaa ennustetta kalansaannista.</p>{% endif %}
@@ -20,8 +20,7 @@
 {% include 'fishinglog/record_card.html' with fish=overall.longest title='Pisin kala' metric='length' only %}
 </div>
 {% if overall.heaviest and overall.longest %}<p class="small text-secondary">{% if overall.heaviest.pk == overall.longest.pk %}Sama kala pitää hallussaan molempia ennätyksiä.{% else %}Paino- ja pituusennätys kuuluvat eri kaloille.{% endif %}</p>{% endif %}
-<h3 class="h6">Ennätykset lajeittain</h3>
-<ul class="list-group list-group-flush">{% for row in records %}<li class="list-group-item px-0"><strong>{{ row.name }}</strong> · painavin {{ row.heaviest.weight|default_if_none:'–'|default:'–' }} kg · pisin {{ row.longest.length|default_if_none:'–'|default:'–' }} m<div class="row g-2 mt-1">{% if row.heaviest %}<div class="col-6"><span class="small">Painavin · {{ row.heaviest.trip.date|date:'d.m.Y' }}</span>{% if row.heaviest.photo %}<img src="{% url 'fishinglog:catch_photo' row.heaviest.pk %}" class="img-fluid rounded" style="max-height:140px" alt="Painavin {{ row.name }}" loading="lazy">{% endif %}</div>{% endif %}{% if row.longest %}<div class="col-6"><span class="small">Pisin · {{ row.longest.trip.date|date:'d.m.Y' }}</span>{% if row.longest.photo %}<img src="{% url 'fishinglog:catch_photo' row.longest.pk %}" class="img-fluid rounded" style="max-height:140px" alt="Pisin {{ row.name }}" loading="lazy">{% endif %}</div>{% endif %}</div></li>{% empty %}<li class="list-group-item">Ei vielä saaliita.</li>{% endfor %}</ul><p class="small text-secondary mt-2 mb-0">Paino- ja pituusennätys voivat kuulua eri kaloille.</p></section>
+{% include 'fishinglog/species_records.html' with records=records only %}</section>
 <section class="card p-3 mt-3"><h2 class="h5">Kalapaikat saalismäärän mukaan</h2><p class="small text-secondary">Vain paikkaan linkitetyt omat reissut. Suuri saalismäärä ei yksin osoita parasta paikkaa.</p><ul class="list-group list-group-flush">{% for spot in spots %}<li class="list-group-item px-0"><strong>{{ spot.name }}</strong> · {{ spot.count }} saalista / {{ spot.trips }} reissua{% if spot.trips < 5 %}<span class="d-block small text-secondary">Pieni otos</span>{% endif %}</li>{% empty %}<li class="list-group-item">Ei vielä kalapaikkoja, joihin on linkitetty omia reissuja.</li>{% endfor %}</ul></section>
 <section class="card p-3 mt-3"><h2 class="h5">Vieheet ja värit</h2>{% include 'fishinglog/stat_bars.html' with rows=lures %}<p class="small text-secondary mb-0">Näytetään saaliiden määrät. Vieheiden kaikkia käyttökertoja ei ole tallennettu, joten käyttömäärää tai saalisprosenttia ei voida laskea luotettavasti.</p></section>
 </div>{% endblock %}

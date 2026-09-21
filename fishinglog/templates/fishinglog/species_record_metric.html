@@ -1,0 +1,8 @@
+<section class="species-record-metric">
+<h5 class="small fw-semibold mb-1">{% if metric == 'weight' %}🏋️ Painavin{% else %}📏 Pisin{% endif %}</h5>
+{% if fish %}
+<p class="species-record-value">{% if metric == 'weight' %}{{ fish.display_weight }} <span>kg</span>{% else %}{{ fish.display_length }} <span>m</span>{% endif %}</p>
+<time class="small text-secondary" datetime="{{ fish.trip.date|date:'Y-m-d' }}">{{ fish.trip.date|date:'d.m.Y' }}</time>
+{% if show_photo and fish.photo %}<img class="species-record-photo" src="{% url 'fishinglog:catch_photo' fish.pk %}" alt="{% if metric == 'weight' %}Painavin{% else %}Pisin{% endif %} {{ fish.species }}" loading="lazy">{% endif %}
+{% else %}<p class="small text-secondary mb-0">{% if metric == 'weight' %}Ei painotietoa{% else %}Ei pituustietoa{% endif %}</p>{% endif %}
+</section>
