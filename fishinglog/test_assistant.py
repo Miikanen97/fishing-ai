@@ -80,7 +80,7 @@ class AssistantTests(TestCase):
         self.assertNotIn('SECRET_OTHER_LAKE', json.dumps(context, default=str))
         self.assertNotIn('private-other', json.dumps(context, default=str))
         self.assertEqual(context['weather'][0]['values']['wind_speed'], '3')
-        self.assertEqual(result['answer']['score'], 6)
+        self.assertIsNone(result['answer']['score'])  # A lone wind value is insufficient.
         api.assert_called_once()
 
     @patch('fishinglog.assistant.forecast_window', side_effect=ai.weather.WeatherError('network'))

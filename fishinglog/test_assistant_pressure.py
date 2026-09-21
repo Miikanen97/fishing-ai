@@ -86,7 +86,7 @@ class PressureIntegrationTests(TestCase):
         user = get_user_model().objects.create_user('pressure-owner')
         self.client.force_login(user)
         response = self.client.post(reverse('fishinglog:assistant'), {'question': 'Kannattaako huomenna Kyyvedelle jigaamaan?'})
-        self.assertContains(response, 'Ilmanpaine 1004 hPa, laskussa')
+        self.assertContains(response, 'Ilmanpaine 1006 hPa, laskussa')  # Deterministic selection favors 09:00.
         api.assert_called_once()
         weather.assert_called_once()
         options = api.call_args.args[1]['time_guidance']

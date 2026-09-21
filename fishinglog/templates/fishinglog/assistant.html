@@ -39,20 +39,17 @@
 <h3 class="h6">Perustelut</h3>
 <section class="small border rounded p-2 mb-3" aria-label="Pisteiden muodostuminen">
 <h4 class="h6">Pisteiden muodostuminen</h4>
-<p>Kalastusarvio 1–10 on AI:n kokonaisarvio. Sille ei ole kiinteitä osapisteitä tai painokertoimia, joten tarkkaa numeerista erittelyä ei ole saatavilla. Alla olevat ajanvalinnan pisteet eivät ole sama asteikko.</p>
+<p><strong>Arvion varmuus: {{ result.answer.confidence|default:'Matala' }}</strong></p>
 {% with audit=result.answer.score_breakdown %}
 {% if audit.available %}
-<div class="fw-semibold">Valitun ajan vertailupisteet: {{ audit.total }}{% if audit.place %} · {{ audit.place }}{% endif %}</div>
-<details class="mt-2"><summary>Näytä ajanvalinnan pistevaikutukset</summary>
-<ul class="list-unstyled mt-2 mb-2">
-{% for factor in audit.factors %}<li class="border-bottom py-2"><strong>{{ factor.label }}: {{ factor.impact }}</strong> · {{ factor.direction }}<br><span class="text-secondary">{{ factor.detail }}</span></li>{% endfor %}
-</ul>
-<p>Lämpötilalle, pilvisyydelle, tuulen suunnalle tai ilmanpaineen tasolle ei ole erillistä numeerista painoa ajanvalinnassa. AI voi huomioida ne kokonaisarviossa, jos tiedot löytyvät; pistevaikutusta ei tunneta.</p>
-<p>Kohdekala: {{ audit.species|default:'Ei määritetty' }}. Annettu kohdekala ja kalastustapa rajaavat historian tukihavaintoja. Yö edellyttää määritettyä kalastustapaa tai kohdekalaa sekä vähintään kahta tukevaa reissua.</p>
+<p>Kalastusarvio: <strong>{{ audit.score }}/10</strong> · {{ audit.place }}. Lähtöpisteet {{ audit.base }} + olosuhteiden vaikutukset = {{ audit.total }}. Tulos pyöristetään lähimpään kokonaislukuun ja rajataan välille 1–10.</p>
+<details><summary>Näytä olosuhteiden pistevaikutukset</summary>
+<ul class="list-unstyled mt-2">{% for factor in audit.factors %}<li class="border-bottom py-2"><strong>{{ factor.label }}: {{ factor.impact }}</strong> · {{ factor.direction }}<br><span class="text-secondary">{{ factor.detail }}</span></li>{% endfor %}</ul>
 </details>
-{% else %}<p>Ajanvalinnan erittelyä ei ole saatavilla: ennuste puuttuu tai vastausta ei voitu yhdistää yhteen paikkaan ja ennusteajankohtaan.</p>{% endif %}
+<p class="mb-1">Varmuuden pohjana {{ audit.relevant_trips }} relevanttia omaa reissua ja {{ audit.weather_count }}/5 keskeistä säätekijää. Kohtalainen varmuus vaatii vähintään 5 reissua ja 4 säätekijää; korkea vähintään 10 reissua, kaikki 5 säätekijää sekä valoisuus- ja trenditiedon.</p>
+{% else %}<p>Olosuhdearvioon ei ole riittävästi säätietoja tai perusteltuja ajankohtia. Historiakysymykselle ei lasketa olosuhdearvosanaa.</p>{% endif %}
 {% endwith %}
-<p class="text-secondary mb-0">Historian vähäisyys tarkoittaa epävarmuutta, ei huonoja olosuhteita. Puuttuvasta historiasta ei vähennetä ajanvalinnan sääpisteitä. Tukevat saalishavainnot voivat tuoda erillisen lisän. AI:n kokonaisarvion sisäistä painotusta ei voida eritellä.</p>
+<p class="text-secondary mb-0">Puuttuvasta historiasta ei vähennetä olosuhdepisteitä. Historia vaikuttaa vain varmuuteen; kohdekalan puuttuminen on neutraalia. Arvio ei ole saalistodennäköisyys eikä turvallisuustakuu.</p>
 </section>
 {% if result.answer.pressure_summary %}<p class="small mb-2">{{ result.answer.pressure_summary }}</p>{% endif %}
 {% for section in summary.sections %}<div class="mb-2"><strong class="small">{{ section.title }}</strong><p class="mb-0" style="white-space:pre-line">{{ section.text }}</p></div>{% empty %}<p style="white-space:pre-line">{{ result.answer.rationale|default:'Perusteluja ei ole saatavilla.' }}</p>{% endfor %}

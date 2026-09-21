@@ -42,7 +42,7 @@ class BreakdownIntegrationTests(TestCase):
     @patch('fishinglog.assistant.call_openai', return_value={**ANSWER, 'score': 3, 'best_time': '21.09.2026 klo 12:00'})
     @patch('fishinglog.assistant.forecast_window', return_value=(forecast([1002, 1004]), []))
     @patch('fishinglog.assistant.timezone.localtime')
-    def test_render_and_model_score_unchanged(self, localtime, weather, api):
+    def test_render_and_deterministic_score_overrides_model(self, localtime, weather, api):
         localtime.side_effect = lambda value=None: value if value is not None else moment(20, 12)
         user = get_user_model().objects.create_user('score-owner')
         self.client.force_login(user)
@@ -50,7 +50,8 @@ class BreakdownIntegrationTests(TestCase):
         self.assertContains(response, 'Pisteiden muodostuminen')
         self.assertContains(response, 'Puuttuvasta historiasta ei vähennetä')
         self.assertContains(response, 'nousussa')
-        self.assertEqual(response.context['result']['answer']['score'], 3)
+        self.assertEqual(response.context['result']['answer']['score'], 8)
+        self.assertContains(response, 'Arvion varmuus: Matala')
         api.assert_called_once()
         for row in api.call_args.args[1]['time_guidance']:
             self.assertNotIn('score_factors', row)
