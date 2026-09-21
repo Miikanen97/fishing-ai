@@ -1,0 +1,16 @@
+<article class="record-card bg-light border rounded">
+{% if fish.photo %}<div class="record-photo"><img src="{% url 'fishinglog:catch_photo' fish.pk %}" alt="{{ title }}: {{ fish.species }}" loading="lazy" width="800" height="450"></div>{% endif %}
+<div class="record-body p-3">
+<h3 class="h6 text-secondary">{{ title }}</h3>
+{% if fish %}
+<p class="small text-secondary mb-2"><time datetime="{{ fish.trip.date|date:'Y-m-d' }}">{{ fish.trip.date|date:'d.m.Y' }}</time></p>
+<p class="fw-semibold mb-1">{{ fish.species }}</p>
+{% if metric == 'weight' %}
+<p class="fs-2 fw-bold mb-0">{{ fish.weight|floatformat:'-3' }} <span class="fs-6">kg</span></p>
+{% if fish.length != None %}<p class="small mb-0">Pituus {{ fish.length|floatformat:'-3' }} m</p>{% endif %}
+{% else %}
+<p class="fs-2 fw-bold mb-0">{{ fish.length|floatformat:'-3' }} <span class="fs-6">m</span></p>
+{% if fish.weight != None %}<p class="small mb-0">Paino {{ fish.weight|floatformat:'-3' }} kg</p>{% endif %}
+{% endif %}
+{% else %}<p class="mb-0">{% if metric == 'weight' %}Ei painotietoja{% else %}Ei pituustietoja{% endif %}</p>{% endif %}
+</div></article>

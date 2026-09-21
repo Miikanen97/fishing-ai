@@ -1,4 +1,6 @@
 {% extends 'fishinglog/base.html' %}
+{% load static %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'fishinglog/record_cards.css' %}">{% endblock %}
 {% block title %}Tilastot{% endblock %}
 {% block content %}<div class="statistics-page"><h1>Tilastot</h1><p class="text-secondary">Oma kalastushistoriasi</p>
 {% if total < 5 %}<p class="alert alert-info">Havaintoja on vielä vähän. Tilastot kuvaavat kirjauksiasi, eivät varmaa ennustetta kalansaannista.</p>{% endif %}
@@ -13,9 +15,9 @@
 <div class="row g-3"><section class="col-12 col-lg-6"><div class="card p-3 h-100"><h2 class="h5">Kalalajit</h2>{% include 'fishinglog/stat_bars.html' with rows=species %}</div></section>
 <section class="col-12 col-lg-6"><div class="card p-3 h-100"><h2 class="h5">Saaliit kellonajoittain</h2>{% if fish_total %}{% include 'fishinglog/stat_bars.html' with rows=periods %}{% else %}<p class="text-secondary">Ei vielä saaliita.</p>{% endif %}<p class="small text-secondary">Aikavälin alku kuuluu ryhmään, loppu seuraavaan. Tämä ei mittaa kalastukseen käytettyä aikaa.</p></div></section></div>
 <section class="card p-3 mt-3"><h2 class="h5">🏆 Ennätyskalat · kaikkien aikojen ennätykset</h2>
-<div class="row g-2 mb-3">
-<div class="col-12 col-sm-6"><div class="bg-light border rounded p-3 h-100"><h3 class="h6 text-secondary">Painavin kala</h3>{% if overall.heaviest %}{% if overall.heaviest.photo %}<img src="{% url 'fishinglog:catch_photo' overall.heaviest.pk %}" alt="Ennätyskalan kuva" loading="lazy" class="img-fluid rounded mb-2" style="max-height:220px">{% endif %}<p class="small text-secondary">{{ overall.heaviest.trip.date|date:'d.m.Y' }}</p><p class="fw-semibold mb-1">{{ overall.heaviest.species }}</p><p class="fs-2 fw-bold mb-0">{{ overall.heaviest.weight|floatformat:'-3' }} <span class="fs-6">kg</span></p>{% if overall.heaviest.length %}<p class="small mb-0">Pituus {{ overall.heaviest.length|floatformat:'-3' }} m</p>{% endif %}{% else %}<p class="mb-0">Ei painotietoja</p>{% endif %}</div></div>
-<div class="col-12 col-sm-6"><div class="bg-light border rounded p-3 h-100"><h3 class="h6 text-secondary">Pisin kala</h3>{% if overall.longest %}{% if overall.longest.photo %}<img src="{% url 'fishinglog:catch_photo' overall.longest.pk %}" alt="Ennätyskalan kuva" loading="lazy" class="img-fluid rounded mb-2" style="max-height:220px">{% endif %}<p class="small text-secondary">{{ overall.longest.trip.date|date:'d.m.Y' }}</p><p class="fw-semibold mb-1">{{ overall.longest.species }}</p><p class="fs-2 fw-bold mb-0">{{ overall.longest.length|floatformat:'-3' }} <span class="fs-6">m</span></p>{% if overall.longest.weight %}<p class="small mb-0">Paino {{ overall.longest.weight|floatformat:'-3' }} kg</p>{% endif %}{% else %}<p class="mb-0">Ei pituustietoja</p>{% endif %}</div></div>
+<div class="record-grid mb-3">
+{% include 'fishinglog/record_card.html' with fish=overall.heaviest title='Painavin kala' metric='weight' only %}
+{% include 'fishinglog/record_card.html' with fish=overall.longest title='Pisin kala' metric='length' only %}
 </div>
 {% if overall.heaviest and overall.longest %}<p class="small text-secondary">{% if overall.heaviest.pk == overall.longest.pk %}Sama kala pitää hallussaan molempia ennätyksiä.{% else %}Paino- ja pituusennätys kuuluvat eri kaloille.{% endif %}</p>{% endif %}
 <h3 class="h6">Ennätykset lajeittain</h3>
