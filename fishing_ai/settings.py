@@ -197,3 +197,10 @@ LOGGING = {
     'handlers': {'fmi_console': {'class': 'logging.StreamHandler', 'level': 'WARNING'}},
     'loggers': {'fishinglog.fmi': {'handlers': ['fmi_console'], 'level': 'WARNING', 'propagate': False}},
 }
+
+# Private photos are never served through MEDIA_URL or WhiteNoise.
+PRIVATE_MEDIA_VOLUME = os.environ.get('RAILWAY_VOLUME_MOUNT_PATH', '').strip()
+MEDIA_ROOT = Path(PRIVATE_MEDIA_VOLUME) / 'private-photos' if PRODUCTION and PRIVATE_MEDIA_VOLUME else BASE_DIR / 'media'
+MEDIA_URL = '/private-media/'
+FILE_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024
+DATA_UPLOAD_MAX_NUMBER_FILES = 20

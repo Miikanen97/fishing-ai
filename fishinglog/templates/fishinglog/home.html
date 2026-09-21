@@ -13,6 +13,7 @@
 <div class="col-6"><div class="card p-3"><strong class="fs-4">{{ catch_count }}</strong><span class="text-secondary">Saalista</span></div></div>
 </div>
 {% include 'fishinglog/home_weather.html' %}
+{% include 'fishinglog/monthly_top.html' with monthly_top=monthly_top only %}
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"><h2 class="h4 mb-0">Viimeisimmät reissut</h2><a href="{% url 'fishinglog:trip_list' %}">Näytä kaikki reissut →</a></div>
 {% include 'fishinglog/trip_cards.html' %}
 {% endblock %}

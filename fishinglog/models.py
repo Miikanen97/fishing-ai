@@ -53,7 +53,11 @@ class Trip(models.Model):
         return compass(self.wind_direction)
 
 
+from .photos import PrivatePhotoStorage, photo_name
+
+
 class Catch(models.Model):
+    photo = models.FileField("Saaliskuva", upload_to=photo_name, storage=PrivatePhotoStorage(), blank=True)
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='catches')
     species = models.CharField('Kalalaji', max_length=100)
     length = models.DecimalField('Pituus (m)', db_column='length_m', max_digits=10, decimal_places=3, null=True, blank=True, validators=[MinValueValidator(0)])

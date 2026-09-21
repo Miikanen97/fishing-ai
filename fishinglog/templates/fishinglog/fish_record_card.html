@@ -1,0 +1,4 @@
+{% if fish.photo %}<a href="{% url 'fishinglog:catch_photo' fish.pk %}" aria-label="Avaa saaliskuva"><img src="{% url 'fishinglog:catch_photo' fish.pk %}" alt="Saaliskuva: {{ fish.species }}" class="img-fluid rounded mb-2" style="width:100%;max-height:220px;object-fit:contain" loading="lazy"></a>{% endif %}
+<p class="fw-semibold mb-1">{{ fish.species }}</p>
+<p class="mb-1">{% if fish.weight != None %}{{ fish.weight|floatformat:'-3' }} kg{% endif %}{% if fish.length != None %} · {{ fish.length|floatformat:'-3' }} m{% endif %}</p>
+<p class="small text-secondary mb-0">{{ fish.date|date:'d.m.Y' }}</p>

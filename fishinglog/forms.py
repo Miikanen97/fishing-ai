@@ -103,6 +103,26 @@ class TripForm(LogForm):
 
 
 class CatchForm(LogForm):
+    photo = forms.FileField(label='Saaliskuva', required=False,
+        widget=forms.FileInput(attrs={'accept': 'image/jpeg,image/png,image/webp'}),
+        help_text='Ota kuva puhelimen kameralla tai valitse tiedosto. JPEG, PNG tai WebP, enintään 8 Mt ja 24 megapikseliä. Sijaintimetatiedot poistetaan. Enintään 20 kuvaa yhdellä tallennuksella.')
+    remove_photo = forms.BooleanField(label='Poista nykyinen kuva', required=False)
+
+    def clean(self):
+        from .photos import normalize_photo
+        data = super().clean()
+        if self.files.get(self.add_prefix('photo')) and 'photo' in data:
+            try:
+                data['photo'] = normalize_photo(data['photo'])
+            except forms.ValidationError as exc:
+                self.add_error('photo', exc)
+        if data.get('remove_photo'):
+            if self.files.get(self.add_prefix('photo')):
+                self.add_error('photo', 'Valitse joko kuvan vaihto tai poisto.')
+            else:
+                data['photo'] = False
+        return data
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for name in ('length', 'weight', 'depth'):
@@ -113,7 +133,7 @@ class CatchForm(LogForm):
 
     class Meta:
         model = Catch
-        fields = ['species', 'length', 'weight', 'lure_name', 'lure_color', 'time', 'depth', 'notes']
+        fields = ['species', 'length', 'weight', 'lure_name', 'lure_color', 'time', 'depth', 'notes', 'photo', 'remove_photo']
         widgets = {'time': forms.TimeInput(format='%H:%M', attrs={'type': 'time'})}
         help_texts = {'length': 'Metreinä, esimerkiksi 0,45. Myös desimaalipiste käy.',
                       'weight': 'Kiloina, esimerkiksi 1,25. Myös desimaalipiste käy.'}

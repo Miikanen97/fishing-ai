@@ -5,9 +5,11 @@ from .profile_views import settings_view
 from .assistant_views import assistant
 
 from .statistics import statistics
+from .photo_views import catch_photo
 
 app_name = 'fishinglog'
 urlpatterns = [
+    path('saaliit/<int:pk>/kuva/', catch_photo, name='catch_photo'),
     path('tilastot/', statistics, name='statistics'),
     path('kalapaikat/', spots, name='spots'),
     path('kalapaikat/<int:pk>/muokkaa/', spots, name='spot_update'),

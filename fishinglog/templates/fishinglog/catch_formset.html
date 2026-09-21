@@ -7,7 +7,7 @@
 <h1>Lisää saalis</h1>
 <p class="text-secondary">{{ trip }} · {{ trip.location }}</p>
 <p>Lisää jokainen kala omalle lomakkeelleen ja tallenna saaliit yhdellä kertaa. Pituus ilmoitetaan metreinä ja paino kiloina. Tähdellä (*) merkityt kentät ovat pakollisia.</p>
-<form method="post" id="catch-batch-form">
+<form enctype="multipart/form-data" method="post" id="catch-batch-form">
 {% csrf_token %}
 {{ formset.management_form }}
 <div class="card p-3 mb-4">

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from .forms import CatchForm
 from .models import Trip, Catch, FishingProfile, AssistantUsage
 
 
@@ -23,8 +24,14 @@ class TripAdmin(OwnerAdmin):
     list_select_related = ('owner',)
 
 
+class AdminCatchForm(CatchForm):
+    class Meta(CatchForm.Meta):
+        fields = ['trip', *CatchForm.Meta.fields]
+
+
 @admin.register(Catch)
 class CatchAdmin(OwnerAdmin):
+    form = AdminCatchForm
     list_display = ('species', 'trip', 'owner', 'length', 'weight')
     list_select_related = ('trip__owner',)
     search_fields = ('species', 'trip__owner__username', 'trip__lake')

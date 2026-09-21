@@ -15,7 +15,7 @@ def bars(counter):
 @login_required
 def statistics(request):
     trips = Trip.objects.filter(owner=request.user)
-    fish = list(Catch.objects.filter(trip__owner=request.user).order_by('pk'))
+    fish = list(Catch.objects.filter(trip__owner=request.user).select_related('trip').order_by('pk'))
     productive = {catch.trip_id for catch in fish}
     species = Counter(c.species for c in fish)
     by_species = defaultdict(list)
@@ -30,7 +30,7 @@ def statistics(request):
     def records(items):
         heavy = [c for c in items if c.weight is not None and c.weight > 0]
         long = [c for c in items if c.length is not None and c.length > 0]
-        return {'heaviest':max(heavy, key=lambda c:c.weight, default=None), 'longest':max(long, key=lambda c:c.length, default=None)}
+        return {'heaviest':max(heavy, key=lambda c:(c.weight, -c.pk), default=None), 'longest':max(long, key=lambda c:(c.length, -c.pk), default=None)}
     # Aggregate both counts once; foreign legacy links are excluded independently.
     spot_rows = FishingSpot.objects.filter(user=request.user).annotate(
         own_trips=Count('trips', filter=Q(trips__owner=request.user), distinct=True),

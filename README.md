@@ -410,3 +410,68 @@ avustajan käyttölaskurin atomisesti. GET-pyyntö ei poista mitään.
 `/admin/` käyttää Django-authin ylläpito-oikeuksia. Kalastusmallien hallinta on rajattu
 superkäyttäjille, ja listoissa näkyvät omistajat. Käyttäjät ovat Djangon UserAdminissa.
 Ylläpitotunnuksen voi luoda palvelimen komentorivillä: `python manage.py createsuperuser`.
+
+
+## Yksityiset saaliskuvat ja Railway Volume
+
+Kuvat ovat vapaaehtoisia. JPEG, PNG ja WebP hyväksytään (enintään 8 Mt / kuva,
+24 megapikseliä, enintään 20 tiedostoa / lomakelähetys). Pillow tarkistaa sisällön,
+korjaa EXIF-kierron ja tallentaa enintään 1600 × 1600 pikselin JPEG-kuvan uusista
+pikseleistä. EXIF/GPS, muut metatiedot ja alkuperäinen tiedostonimi poistetaan.
+HEIC/SVG/GIF eivät ole tuettuja: muunna tarvittaessa JPEG-muotoon.
+
+Paikallisesti tiedostot tallentuvat MEDIA_ROOTiin (`media/catches/`), joka on
+.gitignoressa. MEDIA_URL `/private-media/` on tarkoituksella **ilman julkista
+palvelureittiä**. Kuvia ei saa tarjoilla static()-reitillä, WhiteNoisella, nginxillä
+julkisesti tai avoimen bucketin URLilla. Käytä aina `/saaliit/<id>/kuva/`-reittiä:
+se vaatii kirjautumisen ja tarkistaa `trip.owner == request.user` jokaisella
+pyynnöllä. Vastauksessa on private/no-store sekä nosniff. Myös admin käyttää samaa
+omistajuusrajausta kuvien hakemiseen. Kuvan vaihto, poisto ja saaliin/reissun/tilin
+poisto poistavat vanhan tiedoston vasta tietokantatransaktion onnistuttua.
+
+### Ennen tuotannon kuvalatausten käyttöönottoa (manuaalisesti)
+
+1. Liitä Railwayn **Django-webpalveluun** pysyvä Volume, esimerkiksi mount-polkuun
+   `/data`. PostgreSQL-palvelun oma levy ei riitä. Tässä muutoksessa ei luoda levyä,
+   hankita palvelua eikä käytetä uutta API-avainta. Tarkista oman Railway-tilauksesi
+   levykiintiö ja kustannukset ennen Volumen luontia.
+2. Railway asettaa `RAILWAY_VOLUME_MOUNT_PATH`-muuttujan automaattisesti runtimeen.
+   Älä lisää muuttujaa käsin korvaamaan oikeaa levyä. MEDIA_ROOT muodostuu
+   `<mount>/private-photos`-hakemistoksi. Sovellus tarkistaa todellisen mountin ennen
+   tallentamista. Ilman pysyvää mountia kuva hylätään lomakkeella; saalis ilman kuvaa
+   ja sovelluksen muut toiminnot toimivat normaalisti.
+3. Varmista webpalvelun prosessin kirjoitus- ja lukuoikeus Volumeen. Älä käytä
+   erillisten levyjen replikoita: kaikkien kuvapyyntöjen pitää saavuttaa sama levy.
+4. Ota käyttöön Volumen varmuuskopiot ja varmistu palautuksesta yhdessä PostgreSQL:n
+   varmuuskopioiden kanssa. Paikalliset vanhat kuvat eivät siirry Gitiin tai
+   tuotantoon automaattisesti.
+5. Nykyinen Railway pre-deploy ajaa migraation `0013_catch_photo`. Se lisää vain
+   tyhjän valinnaisen kentän eikä käsittele kuvatiedostoja. Volumea ei tarvita build-
+   tai pre-deploy-vaiheessa. Tarkista deployn jälkeen omalla käyttäjällä kuvan
+   tallennus, luku ja säilyminen uudelleenkäynnistyksen yli.
+
+Railwayn aktiivisia palveluasetuksia ei ole tarkastettu tai muutettu tämän työn
+kuluessa. Koodin Railway-konfiguraatio ei määritä kuville pysyvää levyä.
+Ohjeet: https://docs.railway.com/volumes ja https://docs.railway.com/volumes/backups
+
+TOP 3 sisältää vain kirjautuneen käyttäjän nykyisen Suomen kalenterikuukauden
+reissuille kirjatut saaliit, joilla on paino. Järjestys: paino laskevasti, ID
+nousevasti. Ennätykset ovat omista saaliista (positiivinen paino/pituus), samalla
+ID-tasatilannesäännöllä. Kortit eivät näytä kalapaikkaa eikä GPS-tietoja. Kuvassa
+itsessään näkyviä maisemia ei automaattisesti anonymisoida, mutta kuvat ovat yksityisiä.
+
+### Tämän ominaisuuden tiedostot
+
+- Malli ja migraatio: `fishinglog/models.py`, `fishinglog/migrations/0013_catch_photo.py`.
+- Kuvat ja niiden elinkaari: `fishinglog/photos.py`, `fishinglog/photo_views.py`,
+  `fishinglog/photo_signals.py`, `fishinglog/apps.py`.
+- Lomakkeet, reitit ja näkymät: `fishinglog/forms.py`, `fishinglog/views.py`,
+  `fishinglog/urls.py`, `fishinglog/admin.py`.
+- TOP 3 ja ennätykset: `fishinglog/records.py`, `fishinglog/statistics.py`.
+- Templatet hakemistossa `fishinglog/templates/fishinglog/`: `catch_formset.html`,
+  `form.html`, `trip_detail.html`, `home.html`, `statistics.html`,
+  `fish_record_card.html`, `monthly_top.html`.
+- Asetukset ja riippuvuudet: `fishing_ai/settings.py`, `requirements.txt`,
+  `.env.example`, `.gitignore`.
+- Testit: `fishinglog/test_photos_records.py`.
+- Ohjeet: `README.md`.

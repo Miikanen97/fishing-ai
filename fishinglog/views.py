@@ -1,4 +1,5 @@
 from .home_weather import home_weather
+from .records import monthly_top
 from django.contrib.auth.decorators import login_required
 
 from .forms import RegistrationForm
@@ -67,7 +68,7 @@ def home(request):
 
     trips = Trip.objects.filter(owner=request.user).annotate(catch_count=Count('catches')).order_by('-date', '-start_time', '-pk')
 
-    return render(request, 'fishinglog/home.html', {'trips': add_species_summaries(trips[:5], request.user), 'trip_count': trips.count(), 'catch_count': Catch.objects.filter(trip__owner=request.user).count(), **home_weather(request.user)})
+    return render(request, 'fishinglog/home.html', {'trips': add_species_summaries(trips[:5], request.user), 'monthly_top': monthly_top(request.user), 'trip_count': trips.count(), 'catch_count': Catch.objects.filter(trip__owner=request.user).count(), **home_weather(request.user)})
 
 
 
@@ -206,7 +207,7 @@ def catch_form(request, trip_pk, pk=None):
 
     catch = get_object_or_404(Catch, pk=pk, trip=trip) if pk is not None else None
 
-    form = CatchForm(request.POST if request.method == 'POST' else None, instance=catch)
+    form = CatchForm(request.POST if request.method == 'POST' else None, request.FILES or None, instance=catch)
 
     if request.method == 'POST' and form.is_valid():
 
@@ -242,7 +243,7 @@ def catch_create(request, trip_pk):
 
     outcome = CatchOutcomeForm(data, initial={'no_catch': trip.no_catch})
 
-    formset = CatchFormSet(data, prefix='catches')
+    formset = CatchFormSet(data, request.FILES or None, prefix='catches')
 
     if request.method == 'POST' and outcome.is_valid():
 
