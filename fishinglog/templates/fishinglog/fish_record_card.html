@@ -1,4 +1,7 @@
-{% if fish.photo %}<a href="{% url 'fishinglog:catch_photo' fish.pk %}" aria-label="Avaa saaliskuva"><img src="{% url 'fishinglog:catch_photo' fish.pk %}" alt="Saaliskuva: {{ fish.species }}" class="img-fluid rounded mb-2" style="width:100%;max-height:220px;object-fit:contain" loading="lazy"></a>{% endif %}
-<p class="fw-semibold mb-1">{{ fish.species }}</p>
-<p class="mb-1">{% if fish.weight != None %}{{ fish.weight|floatformat:'-3' }} kg{% endif %}{% if fish.length != None %} · {{ fish.length|floatformat:'-3' }} m{% endif %}</p>
-<p class="small text-secondary mb-0">{{ fish.date|date:'d.m.Y' }}</p>
+{% if fish.photo %}<a class="monthly-fish-photo" href="{% url 'fishinglog:catch_photo' fish.pk %}" aria-label="Avaa saaliskuva: {{ fish.species }}"><img src="{% url 'fishinglog:catch_photo' fish.pk %}" alt="Saaliskuva: {{ fish.species }}" loading="lazy" width="800" height="450"></a>{% endif %}
+<div class="monthly-fish-body">
+<p class="monthly-fish-rank"><span aria-hidden="true">{% if rank == 1 %}🥇{% elif rank == 2 %}🥈{% else %}🥉{% endif %}</span> {{ rank }}. sija</p>
+<h3 class="h5 monthly-fish-species">{{ fish.species }}</h3>
+<p class="monthly-fish-measurements"><strong>{{ fish.weight|floatformat:'-3' }} <span class="fs-6">kg</span></strong>{% if fish.length != None %}<span class="text-secondary">{{ fish.length|floatformat:'-3' }} m</span>{% endif %}</p>
+<time class="small text-secondary" datetime="{{ fish.date|date:'Y-m-d' }}">{{ fish.date|date:'d.m.Y' }}</time>
+</div>

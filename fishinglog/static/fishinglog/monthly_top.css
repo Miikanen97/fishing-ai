@@ -1,0 +1,17 @@
+/* Scoped to the homepage's private monthly podium. */
+.monthly-top-grid { display:grid; grid-template-columns:minmax(0,1fr); grid-auto-rows:1fr; gap:1rem; }
+.monthly-fish { min-width:0; overflow:hidden; height:100%; border-radius:1rem; }
+.monthly-fish.monthly-fish--first { border-color:#428d80; box-shadow:0 0 0 1px #428d8020; }
+.monthly-fish-photo { display:block; flex:none; aspect-ratio:16/9; overflow:hidden; }
+.monthly-fish-photo img { display:block; width:100%; height:100%; object-fit:cover; }
+.monthly-fish-photo:focus-visible { outline:3px solid #428d80; outline-offset:-4px; }
+.monthly-fish-body { display:flex; flex:1; flex-direction:column; justify-content:center; gap:.45rem; padding:1rem 1.15rem; overflow-wrap:anywhere; }
+.monthly-fish-rank { font-weight:650; margin:0; font-size:.9rem; }
+.monthly-fish-species { margin:0; }
+.monthly-fish-measurements { display:flex; flex-wrap:wrap; align-items:baseline; gap:.35rem .85rem; margin:0; }
+.monthly-fish-measurements strong { font-size:1.85rem; line-height:1.2; }
+.monthly-fish--no-photo .monthly-fish-body { background:linear-gradient(135deg,#428d8010,transparent); }
+.monthly-fish--no-photo .monthly-fish-rank span { font-size:2rem; vertical-align:middle; }
+.monthly-top-empty { grid-column:1/-1; margin:0; }
+[data-bs-theme="dark"] .monthly-fish.monthly-fish--first { border-color:#73bbaa; box-shadow:0 0 0 1px #73bbaa20; }
+@media (min-width:768px) { .monthly-top-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
