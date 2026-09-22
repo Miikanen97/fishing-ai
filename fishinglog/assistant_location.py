@@ -3,6 +3,7 @@ import re
 import time
 from contextvars import ContextVar
 from . import weather, geocoding
+from .assistant_dates import calendar_date
 from .assistant_places import forms, normalize, is_question_word
 
 # Closed-class words and common fishing/weather vocabulary are not place evidence.
@@ -92,7 +93,7 @@ def context(value, now):
         if not isinstance(name, str) or not re.fullmatch(r'[\wÅÄÖåäö -]{1,100}', name) or not (59 <= lat <= 71 and 19 <= lon <= 32):
             return None
         return {'name': name, 'latitude': lat, 'longitude': lon,
-                'period': value['period'] if value['period'] in ('now','today','tomorrow','next3') else 'tomorrow',
+                'period': value['period'] if (value['period'] in ('now','today','tomorrow','next3') or calendar_date(value['period'])) else 'tomorrow',
                 'osm': bool(value.get('osm')), 'updated': value['updated']}
     except (KeyError, TypeError, ValueError):
         return None

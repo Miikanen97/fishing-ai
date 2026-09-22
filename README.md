@@ -525,3 +525,19 @@ kiinteän hyväksymis-/hylkäyssyyn ja tiedon aluekontekstin käytöstä. Lokiss
 kysymystekstiä, paikannimiä, koordinaatteja tai käyttäjätietoja. Nominatimin välimuistiavain
 on versioitu, jotta vanhat pelkkään moniselitteisyysmerkintään perustuvat välimuistit
 eivät peitä uusia ehdokaslistoja. Pyyntöportti ja käyttörajat säilyvät ennallaan.
+
+### Kalastusavustajan viikonpäivät
+
+Viikonpäivät tulkitaan ennen paikanratkaisua ja AI-kutsua Europe/Helsinki-ajassa.
+Pelkkä viikonpäivä ja `tulevana` tarkoittavat lähintä tulevaa kyseistä päivää;
+sama päivä on mukana ennen klo 23:a. Sen jälkeen seuraavan viikon päivä on
+varovainen oletus. `ensi` tarkoittaa seuraavan kalenteriviikon kyseistä päivää,
+`tänä` kuluvan kalenteriviikon päivää. Jo menneelle päivälle ei haeta tulevaa ennustetta.
+Viikonpäivä poistetaan vain paikkaparserille annettavasta tekstistä, jotta esimerkiksi
+`Vaherissa torstaina` ei tulkinnu kahdeksi paikaksi.
+
+Viikonpäivän tulos on tarkka ISO-päivämäärä, jota käytetään FMI-pyynnön aikarajoissa
+ja välitetään valmiina OpenAI:lle. Haun hyväksyntää ei rajoiteta kolmeen päivään:
+FMI:n todelliset ennustepisteet määräävät saatavuuden. Tyhjä ennuste ilmoitetaan
+päivämäärän kanssa; verkkovirheestä näytetään edelleen sääpalvelun virheilmoitus.
+Etusivun 48 tunnin ennustetta ja aiempia huomenna-/kolmen päivän hakuja ei muuteta.

@@ -12,6 +12,7 @@ from django.utils import timezone
 from .models import Trip, FishingSpot, Catch
 from . import weather
 from .home_weather import upcoming_weather
+from .assistant_dates import weekday_request, calendar_date, availability_message
 from .assistant_places import identify_place, matches
 from .conditions_score import evaluate
 from .assistant_time import guidance, constrain_answer, pressure_summary, method_key
@@ -32,7 +33,7 @@ def schema(properties):
 
 
 TEXT = {'type': 'string'}
-PLAN = schema({'period': {'type': 'string', 'enum': ['history', 'now', 'today', 'tomorrow', 'next3', 'clarify']},
+PLAN = schema({'period': {'type': 'string', 'pattern': r'^(history|now|today|tomorrow|next3|clarify|\d{4}-\d{2}-\d{2})$'},
                'place': TEXT, 'method': TEXT, 'species': TEXT})
 ANSWER = schema({'recommendation': TEXT, 'score': {'type': ['integer', 'null'], 'minimum': 1, 'maximum': 10},
                  'best_time': TEXT, 'method': TEXT, 'species': TEXT, 'rationale': TEXT, 'uncertainty': TEXT})
@@ -196,12 +197,17 @@ def forecast_window(place, period, now):
             raise weather.NoWeatherData('Huomiselle ei löytynyt ennustepisteitä.')
         return samples, []
     days = 3 if period == 'next3' else 1
-    first = now.date() + timedelta(days=1 if period == 'tomorrow' else 0)
+    requested_day = calendar_date(period)
+    first = requested_day or now.date()
+    if requested_day and requested_day < now.date():
+        raise weather.NoWeatherData('Valittu päivä on jo mennyt.')
     targets = [timezone.make_aware(datetime.combine(first + timedelta(days=day), time(hour)))
-               for day in range(days) for hour in range(0, 24, 3)]
+               for day in range(days) for hour in range(0, 24, 1 if calendar_date(period) else 3)]
     targets = [target for target in targets if target >= now]
     if not targets:
         targets = [now + timedelta(minutes=1)]
+        if requested_day and targets[0].date() != requested_day:
+            raise weather.NoWeatherData('Valitulle päivälle ei ole enää tulevia ajankohtia.')
     resolved = weather.resolve_place(place)
     coords = (resolved['latitude'], resolved['longitude'])
     xml = weather.download(dict(service='WFS', version='2.0.0', request='getFeature',
@@ -220,13 +226,16 @@ def forecast_window(place, period, now):
     return samples, missing
 
 
-def interpret_question(question, saved_names=()):
+def interpret_question(question, saved_names=(), now=None):
     """Local routing: no paid call is used to choose weather inputs."""
+    target_date, place_question = weekday_request(question, now)
     q = question.casefold()
     period = ('next3' if re.search(r'3 päiv|kolme|kolmen|lähiaiko', q) else
               'tomorrow' if 'huomenna' in q else 'today' if 'tänään' in q else
               'now' if 'nyt' in q else 'history' if re.search(r'olen|reissu|viehee|saali|saanut', q) else 'clarify')
-    place = identify_place(question, saved_names)
+    if target_date:
+        period = target_date.isoformat()
+    place = identify_place(place_question, saved_names)
     method = 'jiggaus' if 'jig' in q else 'uistelu' if 'uistel' in q else ''
     species = 'kuha' if 'kuh' in q else 'hauki' if 'hauk' in q else 'ahven' if 'ahven' in q else ''
     return {'period': period, 'place': place, 'method': method, 'species': species}
@@ -275,7 +284,11 @@ def advise(user, question, selected_place='', before_send=None, public_context=N
         raise AssistantError('Kirjaudu sisään.')
     now = timezone.localtime()
     saved_names = list(FishingSpot.objects.filter(user=user).values_list('name', flat=True))
-    plan = interpret_question(question, saved_names)
+    try:
+        plan = interpret_question(question, saved_names, now)
+        _, place_question = weekday_request(question, now)
+    except ValueError as exc:
+        raise AssistantError(str(exc)) from exc
     from .assistant_location import context, public_candidate, resolve_request, PlaceAmbiguity
     from .assistant_places import matches as place_matches
     previous = context(public_context, now)
@@ -285,13 +298,13 @@ def advise(user, question, selected_place='', before_send=None, public_context=N
         raise AssistantError('Kysymyksessä on useita omia kalapaikkoja. Tarkenna yksi paikka.')
     private = bool(own_matches or any(n.casefold() == selected_place.casefold() for n in saved_names))
     try:
-        candidate, area, followup = public_candidate(question, previous) if not private and plan['period'] != 'history' else ('', '', False)
+        candidate, area, followup = public_candidate(place_question, previous) if not private and plan['period'] != 'history' else ('', '', False)
     except PlaceAmbiguity as exc:
         raise AssistantError(str(exc)) from exc
     # Legacy automatic trip/profile choices never enter public geocoding.
     if not private and plan['period'] != 'history' and candidate and (plan['period'] != 'clarify' or followup):
         try:
-            public_location, location_notice, plan['period'] = resolve_request(question, previous, plan['period'], now)
+            public_location, location_notice, plan['period'] = resolve_request(place_question, previous, plan['period'], now)
         except PlaceAmbiguity as exc:
             raise AssistantError(str(exc)) from exc
         if public_location:
@@ -299,7 +312,7 @@ def advise(user, question, selected_place='', before_send=None, public_context=N
         else:
             raise AssistantError('Tarkkaa julkista paikkaa ei löytynyt varmasti. Anna kunta tai valitse oma kalapaikka.')
     if plan['period'] == 'clarify':
-        raise AssistantError('Tarkenna kysymystä: voit kysyä historiasta, nykyhetkestä, tästä päivästä, huomisesta tai seuraavista kolmesta päivästä.')
+        raise AssistantError('Tarkenna kysymystä: voit kysyä historiasta, nykyhetkestä, tästä päivästä, huomisesta, viikonpäivästä tai seuraavista kolmesta päivästä.')
     history = history_for(user)
     saved_spots = spots_for(user, question, preferred_name=plan['place'] or None)
     place, place_source = choose_place(user, plan, selected_place)
@@ -324,11 +337,11 @@ def advise(user, question, selected_place='', before_send=None, public_context=N
                     entry['samples'], _ = forecasts_by_place[query]
                 except weather.WeatherError as exc:
                     log_weather_failure(exc)
-                    entry['error'] = 'Sääpalvelusta ei saatu ennustetta.'
+                    entry['error'] = availability_message(plan['period'], now) if isinstance(exc, weather.NoWeatherData) and calendar_date(plan['period']) else 'Sääpalvelusta ei saatu ennustetta.'
             spot_forecasts.append(entry)
         place, place_source = 'Omat kalapaikat', 'Enintään kolmen oman kalapaikan säävertailu'
         if not any(entry['samples'] for entry in spot_forecasts):
-            warning = 'Kalapaikoille ei saatu ennusteita. Lähtöarviota ei voida vahvistaa.'
+            warning = (availability_message(plan['period'], now) if spot_forecasts and all('Päivämäärä tunnistettiin:' in entry['error'] for entry in spot_forecasts) else 'Kalapaikoille ei saatu ennusteita. Lähtöarviota ei voida vahvistaa.')
     elif plan['period'] != 'history':
         if not place:
             raise AssistantError('Anna kysymykseen tai Paikka-kenttään järven tai kunnan nimi.')
@@ -336,7 +349,7 @@ def advise(user, question, selected_place='', before_send=None, public_context=N
             samples, missing = forecast_window(place, plan['period'], now)
         except weather.WeatherError as exc:
             log_weather_failure(exc)
-            warning = 'Sääpalvelusta ei saatu tietoja. Lähtöarviota tai parasta aikaa ei voida vahvistaa.'
+            warning = (availability_message(plan['period'], now) if isinstance(exc, weather.NoWeatherData) and calendar_date(plan['period']) else 'Sääpalvelusta ei saatu tietoja. Lähtöarviota tai parasta aikaa ei voida vahvistaa.')
     time_rows = []
     condition_options = []
     if plan['period'] != 'history':
