@@ -103,3 +103,14 @@ class FishingSpot(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class PublicGeocodingCache(models.Model):
+    key = models.CharField(max_length=64, primary_key=True)
+    result = models.JSONField(null=True)
+    expires_at = models.DateTimeField()
+
+
+class GeocodingGate(models.Model):
+    # One application-wide lease, shared by all Railway workers.
+    next_allowed = models.DateTimeField()

@@ -20,7 +20,7 @@
 {% for field in form %}<div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
 {% if field.help_text %}<div class="form-text" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</div>{% endif %}
 {% if field.errors %}<div class="text-danger" role="alert">{{ field.errors }}</div>{% endif %}</div>{% endfor %}
-<details class="small text-secondary mb-3"><summary>Miten tietojani käytetään?</summary><p class="mt-2">Kysy avustajalta -painikkeesta kysymys ja rajattu yhteenveto omista kalapaikoistasi, reissuistasi ja saaliistasi lähetetään OpenAI:lle. Yhteenveto voi sisältää muistiinpanoja. Käyttäjätunnusta ei lähetetä. Paikka välitetään tarvittaessa FMI:n säähakuun.</p></details>
+<details class="small text-secondary mb-3"><summary>Miten tietojani käytetään?</summary><p class="mt-2">Kysy avustajalta -painikkeesta kysymys ja rajattu yhteenveto omista kalapaikoistasi, reissuistasi ja saaliistasi lähetetään OpenAI:lle. Yhteenveto voi sisältää muistiinpanoja. Käyttäjätunnusta ei lähetetä. Paikka välitetään tarvittaessa FMI:n säähakuun. Julkinen paikannimi ja alue voidaan ratkaista OpenStreetMap Nominatimilla. Omia tallennettuja kalapaikkoja ei lähetetä Nominatimille.</p></details>
 <button class="btn btn-primary" type="submit">Kysy avustajalta</button><span id="assistant-progress" class="ms-2" role="status"></span>
 </form></div>
 {% if result %}<section class="card p-3 p-md-4" aria-label="Avustajan vastaus" style="overflow-wrap:anywhere">
@@ -34,6 +34,8 @@
 <div class="col-6"><div class="bg-light rounded p-2 h-100"><div class="small text-secondary">🪝 Kalastustapa</div>{{ result.answer.method|default:'Ei arvioitu' }}</div></div>
 <div class="col-12"><div class="bg-light rounded p-2"><span class="small text-secondary">🌦️ Sää</span><br>{% if result.warning %}Sääennuste puuttuu tai on epävarma.{% elif result.spot_forecasts %}Paikkakohtaiset ennusteet arvioitu perusteluissa.{% elif result.samples %}Ennuste mukana arviossa · {{ result.samples|length }} ajankohtaa{% else %}Katso ennusteen vaikutus perusteluista, jos se on arvioitu.{% endif %}</div></div>
 </div>
+{% if result.location_notice %}<div class="alert alert-info py-2">{{ result.location_notice }}</div>{% endif %}
+{% if result.geocoding_attribution %}<p class="small text-secondary">Paikkahaku: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · Nominatim</p>{% endif %}
 {% if result.warning %}<div class="alert alert-warning py-2" role="status">{{ result.warning }}</div>{% endif %}
 <h3 class="h6">Suositus</h3><p>{{ summary.recommendation|default:'Suositusta ei ole saatavilla.' }}</p>
 <h3 class="h6">Perustelut</h3>

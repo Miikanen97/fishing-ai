@@ -20,7 +20,11 @@ def assistant(request):
         reservation = None
         try:
             reservation = reserve(request.user)
-            result = advise(request.user, form.cleaned_data['question'], form.cleaned_data['place'], before_send=lambda: record_dispatch(reservation))
+            result = advise(request.user, form.cleaned_data['question'], form.cleaned_data['place'], before_send=lambda: record_dispatch(reservation), public_context=request.session.get('public_weather_context', {}))
+            if result and result.get('public_context'):
+                request.session['public_weather_context'] = result['public_context']
+            else:
+                request.session.pop('public_weather_context', None)
         except AssistantError as exc:
             message = str(exc)
             if not settings.DEBUG and 'OPENAI_API_KEY' in message:

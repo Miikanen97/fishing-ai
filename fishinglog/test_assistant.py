@@ -75,7 +75,7 @@ class AssistantTests(TestCase):
     @patch('fishinglog.assistant.call_openai', return_value=ANSWER)
     def test_own_context_only_and_forecast_used(self, api, forecast):
         result = ai.advise(self.user, 'Tänään Kyyvedelle?', 'Helsinki')
-        self.assertEqual(forecast.call_args.args[0], 'Kyyvesi')
+        self.assertEqual(forecast.call_args.args[0], '61.99757,27.16802')
         context = api.call_args_list[0].args[1]
         self.assertNotIn('SECRET_OTHER_LAKE', json.dumps(context, default=str))
         self.assertNotIn('private-other', json.dumps(context, default=str))
@@ -226,7 +226,7 @@ class UsageLimitTests(TestCase):
 
     def test_local_routing_needs_no_api(self):
         for question, period, place in [
-            ('Kannattaako tänään lähteä Kyyvedelle jiggaamaan?', 'today', 'Kyyvesi'),
+            ('Kannattaako tänään lähteä Kyyvedelle jiggaamaan?', 'today', ''),
             ('Kannattaako huomenna uistella kuhaa?', 'tomorrow', ''),
             ('Milloin seuraavan 3 päivän aikana olisi paras hetki kalastaa?', 'next3', ''),
             ('Millaisella säällä olen saanut eniten haukia?', 'history', '')]:

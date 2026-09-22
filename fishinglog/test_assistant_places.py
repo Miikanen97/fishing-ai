@@ -72,7 +72,8 @@ class SavedPlaceRoutingTests(TestCase):
 
     @patch('fishinglog.assistant.call_openai')
     @patch('fishinglog.assistant.forecast_window')
-    def test_foreign_or_missing_place_is_not_guessed(self, forecast, api):
+    @patch('fishinglog.assistant_location.resolve', return_value=None)
+    def test_foreign_or_missing_place_is_not_guessed(self, resolve, forecast, api):
         FishingSpot.objects.create(user=self.other, name='Salajärvi', latitude=64, longitude=28)
         for question in ('Monelta huomenna kannattaa lähteä?', 'Monelta huomenna Salajärvelle?'):
             with self.subTest(question=question), self.assertRaises(ai.AssistantError):

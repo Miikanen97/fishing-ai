@@ -475,3 +475,37 @@ itsessään näkyviä maisemia ei automaattisesti anonymisoida, mutta kuvat ovat
   `.env.example`, `.gitignore`.
 - Testit: `fishinglog/test_photos_records.py`.
 - Ohjeet: `README.md`.
+
+### Kalastusavustajan julkinen paikkahaku
+
+Omat FishingSpotit ohittavat julkisen geokoodauksen. Julkiselle paikannimelle kokeillaan
+ensin nykyistä FMI-paikkahakua, sitten tarvittaessa OpenStreetMap Nominatimia.
+Koko kysymystä, omien kalapaikkojen nimiä/koordinaatteja tai muistiinpanoja ei lähetetä
+Nominatimille. Haku tapahtuu vain avustajan lomakkeen lähetyksestä, ei kirjoittaessa.
+
+Nominatimin [käyttöehdot](https://operations.osmfoundation.org/policies/nominatim/)
+rajaavat koko sovelluksen yhteen pyyntöön sekunnissa. Tietokannan yhteinen pyyntöportti
+estää rinnakkaiset haut myös Railwayn eri workereilta; varattu palvelu epäonnistuu
+hallitusti. Julkiset tulokset välimuistitetaan 24 tunniksi, tyhjät/epäselvät tunniksi.
+Palvelu soveltuu kohtuulliseen käyttäjämäärään eikä takaa saatavuutta. Nominatim-palvelun
+osoitteen voi vaihtaa ympäristömuuttujalla `NOMINATIM_URL` ilman koodimuutosta.
+Paikkahaun lähdemerkintä näytetään vastauksessa. API-avainta ei tarvita.
+
+Julkinen sääpaikka ja ajanjakso säilyvät käyttäjän istunnossa enintään kuusi tuntia.
+Vain selvä jatkokysymys voi käyttää edellistä aluetta varapaikkana, ja siitä näytetään
+ilmoitus. Alueellisesti rajattu haku hyväksyy vain nimeltään sopivan, yksiselitteisen
+suomalaisen tuloksen enintään 100 km:n päästä alueen edustavasta pisteestä. Tämä on
+alueellinen tarkistus, ei järven rantaviivan tunnistus; epäselvät paikat hylätään.
+
+Ennen käyttöä aja `python manage.py migrate` (migraatio 0014 lisää jaetun julkisen
+paikkavälimuistin ja pyyntöportin). Railwayn tavallinen migraatiovaihe hoitaa tämän.
+
+Paikkatunnistus ei käytä järvien nimilistaa. Se poimii myös pienellä kirjoitetun
+paikkaehdokkaan, muodostaa enintään kolme perusmuotoehdokasta ja tarkistaa
+hakutuloksen nimen suhteessa alkuperäiseen taivutusmuotoon. Pitkä e-vartalo ja
+vokaalin kahdentava illatiivi huomioidaan yleisillä säännöillä. Ristiriitaiset
+vahvistetut tulokset hylätään; tavalliset kysymys-, sää- ja kalastussanat suodatetaan.
+Tämä ei ole täydellinen suomen taivutusmoottori: epäselvään nimeen pyydetään tarkennus.
+Koko julkisen paikan ratkaisulle on 20 sekunnin aloitusbudjetti; jo aloitettu pyyntö
+voi kestää oman aikakatkaisunsa loppuun. Budjetin loppuessa keskeneräistä ehdokasvertailua
+ei hyväksytä. FMI:n ja Nominatimin olemassa olevat pyyntökohtaiset timeoutit säilyvät.

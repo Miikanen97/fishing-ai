@@ -270,17 +270,39 @@ Selitä epävarmuus ja puuttuvat sääarvot. Älä suosittele lähtöä vaaralli
 """
 
 
-def advise(user, question, selected_place='', before_send=None):
+def advise(user, question, selected_place='', before_send=None, public_context=None):
     if not user.is_authenticated:
         raise AssistantError('Kirjaudu sisään.')
     now = timezone.localtime()
     saved_names = list(FishingSpot.objects.filter(user=user).values_list('name', flat=True))
     plan = interpret_question(question, saved_names)
+    from .assistant_location import context, public_candidate, resolve_request, PlaceAmbiguity
+    from .assistant_places import matches as place_matches
+    previous = context(public_context, now)
+    public_location, location_notice = None, ''
+    own_matches = place_matches(question, saved_names)
+    if len(own_matches) > 1:
+        raise AssistantError('Kysymyksessä on useita omia kalapaikkoja. Tarkenna yksi paikka.')
+    private = bool(own_matches or any(n.casefold() == selected_place.casefold() for n in saved_names))
+    try:
+        candidate, area, followup = public_candidate(question, previous) if not private and plan['period'] != 'history' else ('', '', False)
+    except PlaceAmbiguity as exc:
+        raise AssistantError(str(exc)) from exc
+    # Legacy automatic trip/profile choices never enter public geocoding.
+    if not private and plan['period'] != 'history' and candidate and (plan['period'] != 'clarify' or followup):
+        public_location, location_notice, plan['period'] = resolve_request(question, previous, plan['period'], now)
+        if public_location:
+            plan['place'] = public_location['name']
+        else:
+            raise AssistantError('Tarkkaa julkista paikkaa ei löytynyt varmasti. Anna kunta tai valitse oma kalapaikka.')
     if plan['period'] == 'clarify':
         raise AssistantError('Tarkenna kysymystä: voit kysyä historiasta, nykyhetkestä, tästä päivästä, huomisesta tai seuraavista kolmesta päivästä.')
     history = history_for(user)
     saved_spots = spots_for(user, question, preferred_name=plan['place'] or None)
     place, place_source = choose_place(user, plan, selected_place)
+    if public_location:
+        place = f"{public_location['latitude']},{public_location['longitude']}"
+        place_source = 'Julkisen paikannimen koordinaatit'
     samples, missing, warning = [], [], ''
     spot_forecasts = []
     compare = bool(re.search(r'mihin|minne|kalapaik', question.casefold())) and not plan['place'] and not selected_place
@@ -356,7 +378,7 @@ def advise(user, question, selected_place='', before_send=None):
     rated = [option for option in condition_options if option['available']]
     rating = max(rated, key=lambda option: (option['total'], option['target'], option['place'])) if rated else None
     answer = call_openai(ANSWER_PROMPT, {'question': question, 'plan': plan, 'now': now.isoformat(),
-        'place': place, 'conditions_rating': rating, 'time_guidance': time_options, 'history': history, 'saved_spots': saved_spots, 'spot_forecasts': spot_forecasts, 'weather': samples, 'missing_times': missing, 'weather_error': warning}, ANSWER, 1100, before_send=before_send)
+        'place': place, 'conditions_rating': rating, 'time_guidance': time_options, 'history': history, 'saved_spots': saved_spots, 'spot_forecasts': spot_forecasts, 'weather': samples, 'missing_times': missing, 'weather_error': warning, 'location_notice': location_notice}, ANSWER, 1100, before_send=before_send)
     answer = dict(answer)
     constrain_answer(answer, time_rows, plan)
     answer['score'] = rating['score'] if rating else None
@@ -372,6 +394,6 @@ def advise(user, question, selected_place='', before_send=None):
     if not rating and plan['period'] != 'history':
         answer['best_time'] = 'Ei arvioitavissa'
         answer['recommendation'] = 'Olosuhdearvioon ei ole riittävästi säätietoja tai perusteltuja ajankohtia.'
-    return {'spot_history_summary': [{'name': spot['name'], 'included_trips': spot['included_trips'], 'total_trips': spot['total_trips']} for spot in saved_spots['places']], 'spot_forecasts': spot_forecasts, 'answer': answer, 'place': place, 'place_source': place_source, 'warning': warning,
+    return {'spot_history_summary': [{'name': spot['name'], 'included_trips': spot['included_trips'], 'total_trips': spot['total_trips']} for spot in saved_spots['places']], 'spot_forecasts': spot_forecasts, 'answer': answer, 'public_context': public_location, 'location_notice': location_notice, 'geocoding_attribution': bool(public_location and public_location.get('osm')), 'place': public_location['name'] if public_location else place, 'place_source': place_source, 'warning': warning,
             'history_count': history['included_trips'], 'history_total': history['total_trips'],
             'samples': samples, 'missing_count': len(missing), 'fetched_at': now}

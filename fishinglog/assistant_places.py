@@ -3,7 +3,6 @@ import re
 import unicodedata
 
 QUESTION_WORDS = frozenset('monelta milloin missä mihin minne mistä missäpäin mihinpäin mistäpäin kannattaako koska miksi miten kuinka mitä mikä mitkä ketkä kuka kenelle keneltä kenellä kenen kumpi kumman kummalla kummalle kummalta paljonko montako moniko monenko kauanko millainen millaiset millaisella millä miltä mille minkä minkälainen onko olisiko voiko saako pitäisikö joko eikö'.split())
-KNOWN_PLACES = ('Kyyvesi', 'Jyväskylä', 'Kangasniemi')
 
 
 def normalize(text):
@@ -21,10 +20,12 @@ def forms(name):
     variants = {name}
     # Generate forms from a known name; never strip an unknown word into a guess.
     stems = {name}
-    for ending, stem in [('vesi', 'vede'), ('järvi', 'järve'), ('lampi', 'lamme'), ('niemi', 'nieme'), ('saari', 'saare'), ('koski', 'koske')]:
+    for ending, stem in [('nne', 'ntee'), ('vesi', 'vede'), ('järvi', 'järve'), ('lampi', 'lamme'), ('niemi', 'nieme'), ('saari', 'saare'), ('koski', 'koske')]:
         if name.endswith(ending):
             stems = {name[:-len(ending)] + stem}
             break
+    if name.endswith('e'):
+        stems.add(name + 'e')  # e-final names may have a long oblique stem.
     for stem in stems:
         variants.update(stem + suffix for suffix in ('ssa', 'ssä', 'sta', 'stä', 'lla', 'llä', 'lta', 'ltä', 'lle', 'n'))
         if stem[-1:] in 'aeiouyäö':
@@ -52,9 +53,6 @@ def identify_place(question, saved_names=()):
     own = matches(question, saved_names)
     if own:
         return own[0] if len(own) == 1 else ''
-    known = matches(question, KNOWN_PLACES)
-    if known:
-        return known[0] if len(known) == 1 else ''
     # Optional explicit user notation, not arbitrary capitalized prose.
     explicit = re.findall(r'\b(?:paikka|järvi|kunta)\s*:\s*"([^"\n]{1,200})"', question, re.I)
     if len(explicit) == 1 and forms(explicit[0]):

@@ -204,3 +204,7 @@ MEDIA_ROOT = Path(PRIVATE_MEDIA_VOLUME) / 'private-photos' if PRODUCTION and PRI
 MEDIA_URL = '/private-media/'
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024
 DATA_UPLOAD_MAX_NUMBER_FILES = 20
+
+# Public-name fallback only, on assistant form submission. No API key required.
+NOMINATIM_URL = os.environ.get('NOMINATIM_URL', 'https://nominatim.openstreetmap.org/search')
+NOMINATIM_USER_AGENT = 'FishingAI/1.0 (https://github.com/Miikanen97/fishing-ai)'
