@@ -509,3 +509,19 @@ Tämä ei ole täydellinen suomen taivutusmoottori: epäselvään nimeen pyydet�
 Koko julkisen paikan ratkaisulle on 20 sekunnin aloitusbudjetti; jo aloitettu pyyntö
 voi kestää oman aikakatkaisunsa loppuun. Budjetin loppuessa keskeneräistä ehdokasvertailua
 ei hyväksytä. FMI:n ja Nominatimin olemassa olevat pyyntökohtaiset timeoutit säilyvät.
+
+Paikannimiparin järjestys ei määrää kohdetta ja aluetta. Ratkaisija säilyttää
+Nominatimin nimeltään sopivat vaihtoehdot sekä rajatun joukon julkisia aluekenttiä,
+paikkatyypin ja bounding boxin. Se vertaa molempia hierarkian suuntia. Tarkempi
+kohde hyväksytään vain yksiselitteisen yhteensopivuuden perusteella; hallinnollinen
+ristiriita estää valinnan. Vesistön bounding boxia käytetään pienellä rantamarginaalilla,
+ei todisteena siitä että piste on vedessä. Jos vaihtoehtoja jää useita, pyydetään kunta.
+Järven ei tarvitse ratketa yhdeksi pisteeksi, jos sen alue-ehdokkaat vahvistavat
+FMI:stä saadun tarkemman kohteen. Vanha 100 km:n tarkistus säilyy yksittäisen nimen
+jatkokysymyksen varovaisessa haussa, mutta sitä ei käytetä nimiparin hierarkian todisteena.
+
+WARNING-loki `fishinglog.places` sisältää palvelun, kandidaattien lukumäärän,
+kiinteän hyväksymis-/hylkäyssyyn ja tiedon aluekontekstin käytöstä. Lokissa ei ole
+kysymystekstiä, paikannimiä, koordinaatteja tai käyttäjätietoja. Nominatimin välimuistiavain
+on versioitu, jotta vanhat pelkkään moniselitteisyysmerkintään perustuvat välimuistit
+eivät peitä uusia ehdokaslistoja. Pyyntöportti ja käyttörajat säilyvät ennallaan.

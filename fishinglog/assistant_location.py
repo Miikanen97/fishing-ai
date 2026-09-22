@@ -155,10 +155,12 @@ def _resolve_request(question, previous, period, now):
     name, area_name, followup = public_candidate(question, previous)
     if not name:
         return None, '', period
-    area = resolve(area_name) if area_name else previous if followup else None
-    if area_name and not area:
-        return None, '', period
-    result = resolve(name, area)
+    area = previous if followup else None
+    if area_name:
+        from .place_hierarchy import pair
+        result = pair(name, area_name)
+    else:
+        result = resolve(name, area)
     notice = ''
     if not result and followup and area:
         result = dict(area)

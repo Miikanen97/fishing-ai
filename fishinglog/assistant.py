@@ -290,7 +290,10 @@ def advise(user, question, selected_place='', before_send=None, public_context=N
         raise AssistantError(str(exc)) from exc
     # Legacy automatic trip/profile choices never enter public geocoding.
     if not private and plan['period'] != 'history' and candidate and (plan['period'] != 'clarify' or followup):
-        public_location, location_notice, plan['period'] = resolve_request(question, previous, plan['period'], now)
+        try:
+            public_location, location_notice, plan['period'] = resolve_request(question, previous, plan['period'], now)
+        except PlaceAmbiguity as exc:
+            raise AssistantError(str(exc)) from exc
         if public_location:
             plan['place'] = public_location['name']
         else:

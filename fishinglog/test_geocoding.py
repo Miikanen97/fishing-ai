@@ -152,8 +152,8 @@ class LocationIntegrationTests(TestCase):
     @patch('fishinglog.assistant.forecast_window',return_value=([],[]))
     @patch('fishinglog.assistant_location.resolve')
     def test_compound_uses_small_locality_and_fallback_is_visible(self,resolve,forecast,api):
-        resolve.side_effect=[AREA.copy(),LOCAL.copy()]
-        self.client.post('/avustaja/',{'question':'Huomenna Vaheri Päijänteellä?'})
+        with patch('fishinglog.place_hierarchy.pair', return_value=LOCAL.copy()):
+            self.client.post('/avustaja/',{'question':'Huomenna Vaheri Päijänteellä?'})
         self.assertEqual(forecast.call_args.args[0],'61.8,25.3')
         resolve.side_effect=None
         resolve.return_value=None
@@ -169,20 +169,21 @@ class FullFallbackTests(TestCase):
     def test_fmi_name_failure_geocodes_then_forecasts_by_coordinates(self,get,fmi,forecast,api):
         user=get_user_model().objects.create_user('fallback-owner')
         def fmi_result(name):
-            if name.startswith('päijän'):
-                return AREA.copy()
+            if name == 'vaheri':
+                return LOCAL.copy()
             raise WeatherError('not found')
         fmi.side_effect=fmi_result
         response=get.return_value.__enter__.return_value
         response.status_code=200
         response.iter_content.return_value=[json.dumps([{
-            'name':'Vaheri','lat':'61.8','lon':'25.3','address':{'country_code':'fi'}
+            'name':'Päijänne','lat':'61.5','lon':'25.5','type':'lake',
+            'boundingbox':['61.0','62.5','25.0','26.0'],'address':{'country_code':'fi'}
         }]).encode()]
         result=ai.advise(user,'Huomenna Vaheri Päijänteellä?')
         self.assertEqual(result['place'],'Vaheri')
         forecast.assert_called_once()
         self.assertEqual(forecast.call_args.args[:2],('61.8,25.3','tomorrow'))
-        self.assertEqual(get.call_args.kwargs['params']['q'],'vaheri')
+        self.assertEqual(get.call_args.kwargs['params']['q'],'päijänne')
         get.assert_called_once()
         api.assert_called_once()
 

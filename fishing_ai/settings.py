@@ -195,7 +195,7 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {'fmi_console': {'class': 'logging.StreamHandler', 'level': 'WARNING'}},
-    'loggers': {'fishinglog.fmi': {'handlers': ['fmi_console'], 'level': 'WARNING', 'propagate': False}},
+    'loggers': {'fishinglog.places': {'handlers': ['fmi_console'], 'level': 'WARNING', 'propagate': False}, 'fishinglog.fmi': {'handlers': ['fmi_console'], 'level': 'WARNING', 'propagate': False}},
 }
 
 # Private photos are never served through MEDIA_URL or WhiteNoise.
