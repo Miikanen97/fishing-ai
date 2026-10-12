@@ -14,3 +14,28 @@ htmlcov/
 *.log
 staticfiles/
 media/
+
+# Private backups, database exports and history archives
+backups/
+backup/
+*.bak
+*.backup
+*.dump
+*.sql
+*.sql.gz
+*.sqlite
+*.db
+*.bundle
+
+# Private keys and credential containers
+id_rsa
+id_ed25519
+id_ecdsa
+id_dsa
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+.aws/
+.ssh/

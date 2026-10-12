@@ -15,6 +15,7 @@ from .home_weather import upcoming_weather
 from .assistant_dates import weekday_request, calendar_date, availability_message
 from .assistant_places import identify_place, matches
 from .conditions_score import evaluate
+from .assistant_privacy import private_payload
 from .assistant_time import guidance, constrain_answer, pressure_summary, method_key
 
 logger = logging.getLogger(__name__)
@@ -279,7 +280,7 @@ Selitä epävarmuus ja puuttuvat sääarvot. Älä suosittele lähtöä vaaralli
 """
 
 
-def advise(user, question, selected_place='', before_send=None, public_context=None):
+def advise(user, question, selected_place='', before_send=None, public_context=None, include_notes=False):
     if not user.is_authenticated:
         raise AssistantError('Kirjaudu sisään.')
     now = timezone.localtime()
@@ -315,6 +316,13 @@ def advise(user, question, selected_place='', before_send=None, public_context=N
         raise AssistantError('Tarkenna kysymystä: voit kysyä historiasta, nykyhetkestä, tästä päivästä, huomisesta, viikonpäivästä tai seuraavista kolmesta päivästä.')
     history = history_for(user)
     saved_spots = spots_for(user, question, preferred_name=plan['place'] or None)
+    notes_spot = None
+    if include_notes:
+        requested = plan['place'] or selected_place
+        own = [spot for spot in saved_spots['places'] if spot['name'].casefold() == requested.casefold()]
+        if len(own) != 1:
+            raise AssistantError('Valitse yksi oma kalapaikka muistiinpanojen käsittelyä varten.')
+        notes_spot = own[0]['spot_id']
     place, place_source = choose_place(user, plan, selected_place)
     if public_location:
         place = f"{public_location['latitude']},{public_location['longitude']}"
@@ -393,8 +401,8 @@ def advise(user, question, selected_place='', before_send=None, public_context=N
     # Select before the model call: model output cannot change score, place or time.
     rated = [option for option in condition_options if option['available']]
     rating = max(rated, key=lambda option: (option['total'], option['target'], option['place'])) if rated else None
-    answer = call_openai(ANSWER_PROMPT, {'question': question, 'plan': plan, 'now': now.isoformat(),
-        'place': place, 'conditions_rating': rating, 'time_guidance': time_options, 'history': history, 'saved_spots': saved_spots, 'spot_forecasts': spot_forecasts, 'weather': samples, 'missing_times': missing, 'weather_error': warning, 'location_notice': location_notice}, ANSWER, 1100, before_send=before_send)
+    answer = call_openai(ANSWER_PROMPT, private_payload({'question': question, 'plan': plan, 'now': now.isoformat(),
+        'place': place, 'conditions_rating': rating, 'time_guidance': time_options, 'history': history, 'saved_spots': saved_spots, 'spot_forecasts': spot_forecasts, 'weather': samples, 'missing_times': missing, 'weather_error': warning, 'location_notice': location_notice}, notes_spot=notes_spot), ANSWER, 1100, before_send=before_send)
     answer = dict(answer)
     constrain_answer(answer, time_rows, plan)
     answer['score'] = rating['score'] if rating else None

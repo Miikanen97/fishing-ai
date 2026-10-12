@@ -171,6 +171,9 @@ class RegistrationForm(AuthStyleMixin, UserCreationForm):
 
 
 class AssistantForm(forms.Form):
+    include_notes = forms.BooleanField(required=False, label='Salli valitun oman kalapaikan muistiinpanojen lähettäminen OpenAI:lle tässä kysymyksessä',
+        help_text='Valitse yksi oma kalapaikka. Mukaan otetaan vain tämän paikan rajatun historiaotoksen muistiinpanot, enintään 2 000 merkkiä yhteensä. Älä sisällytä arkaluonteisia tietoja.',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
     question = forms.CharField(label='Kysymys', max_length=1000, widget=forms.Textarea(attrs={
         'class': 'form-control', 'rows': 3, 'placeholder': 'Kannattaako tänään lähteä Kyyvedelle jiggaamaan?'}))
     place = forms.CharField(label='Paikka (valinnainen)', max_length=200, required=False,

@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "groups": {
+    "species": {
+      "kuha": "Kuha",
+      "ahven": "Ahven",
+      "hauki": "Hauki"
+    },
+    "methods": {
+      "jigging": "Jigikalastus",
+      "casting": "Heittokalastus",
+      "trolling": "Uistelu"
+    },
+    "lures": {
+      "jig": "Jigi",
+      "wobbler": "Vaappu",
+      "spoon": "Lusikka",
+      "spinner": "Lippa",
+      "spinnerbait": "Spinnerbait"
+    },
+    "water_clarity": {
+      "clear": "Kirkas",
+      "normal": "Normaali (käyttäjän suhteellinen havainto)",
+      "humic_dark": "Humuksen tummentama",
+      "turbid": "Samea"
+    },
+    "light": {
+      "bright": "Kirkas päivä",
+      "cloudy": "Pilvinen",
+      "dusk": "Hämärä",
+      "dark": "Yö / pimeä"
+    },
+    "seasons": {
+      "spring": "Kevät",
+      "summer": "Kesä",
+      "autumn": "Syksy",
+      "winter": "Talvi"
+    },
+    "pressure_trends": {
+      "rising": "Nouseva",
+      "stable": "Melko vakaa",
+      "falling": "Laskeva"
+    },
+    "color_groups": {
+      "natural_light": "Vaalea luonnonväri",
+      "natural_dark": "Tumma luonnonväri",
+      "metallic_silver": "Hopean sävyinen metalliväri",
+      "metallic_gold": "Kullan sävyinen metalliväri",
+      "high_contrast": "Voimakas kontrasti",
+      "fluorescent": "Fluoresoiva",
+      "glow": "Jälkihohtava"
+    },
+    "evidence_types": {
+      "research": "Tutkimus",
+      "expert_guidance": "Lähteistetty asiantuntijaohje",
+      "practical_guideline": "Lähteistetty käytännön ohje"
+    },
+    "conflict_groups": {
+      "method": "Kalastustapa",
+      "lure_type": "Viehetyyppi",
+      "lure_size": "Vieheen koko",
+      "lure_color": "Vieheen väri",
+      "fishing_depth": "Kalastussyvyys",
+      "lure_running_depth": "Vieheen uintisyvyys"
+    }
+  },
+  "condition_fields": {
+    "season": {
+      "kind": "category",
+      "catalog_group": "seasons"
+    },
+    "method": {
+      "kind": "category",
+      "catalog_group": "methods"
+    },
+    "water_clarity": {
+      "kind": "category",
+      "catalog_group": "water_clarity"
+    },
+    "light": {
+      "kind": "category",
+      "catalog_group": "light"
+    },
+    "pressure_trend": {
+      "kind": "category",
+      "catalog_group": "pressure_trends"
+    },
+    "air_temperature": {
+      "kind": "quantity",
+      "unit": "degC",
+      "minimum": -273.15,
+      "maximum": null
+    },
+    "water_temperature": {
+      "kind": "quantity",
+      "unit": "degC",
+      "minimum": -273.15,
+      "maximum": null
+    },
+    "bottom_depth": {
+      "kind": "quantity",
+      "unit": "m",
+      "minimum": 0,
+      "maximum": null
+    },
+    "fishing_depth": {
+      "kind": "quantity",
+      "unit": "m",
+      "minimum": 0,
+      "maximum": null
+    },
+    "fish_holding_depth": {
+      "kind": "quantity",
+      "unit": "m",
+      "minimum": 0,
+      "maximum": null
+    },
+    "lure_running_depth": {
+      "kind": "quantity",
+      "unit": "m",
+      "minimum": 0,
+      "maximum": null
+    },
+    "wind_speed": {
+      "kind": "quantity",
+      "unit": "m/s",
+      "minimum": 0,
+      "maximum": null
+    },
+    "precipitation": {
+      "kind": "quantity",
+      "unit": "mm/h",
+      "minimum": 0,
+      "maximum": null
+    },
+    "air_pressure": {
+      "kind": "quantity",
+      "unit": "hPa",
+      "minimum": 0,
+      "maximum": null
+    },
+    "pressure_change_rate": {
+      "kind": "quantity",
+      "unit": "hPa/h",
+      "minimum": null,
+      "maximum": null
+    },
+    "cloud_cover": {
+      "kind": "quantity",
+      "unit": "percent",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "local_hour": {
+      "kind": "quantity",
+      "unit": "hour",
+      "minimum": 0,
+      "maximum": 24
+    }
+  },
+  "recommendation_fields": {
+    "methods": {
+      "kind": "category",
+      "catalog_group": "methods"
+    },
+    "lure_types": {
+      "kind": "category",
+      "catalog_group": "lures"
+    },
+    "color_groups": {
+      "kind": "category",
+      "catalog_group": "color_groups"
+    },
+    "lure_length": {
+      "kind": "quantity",
+      "unit": "cm",
+      "minimum": 0,
+      "maximum": null
+    },
+    "fishing_depth": {
+      "kind": "quantity",
+      "unit": "m",
+      "minimum": 0,
+      "maximum": null
+    },
+    "lure_running_depth": {
+      "kind": "quantity",
+      "unit": "m",
+      "minimum": 0,
+      "maximum": null
+    }
+  },
+  "unknown_value": null
+}

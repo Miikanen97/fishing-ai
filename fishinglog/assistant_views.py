@@ -20,7 +20,7 @@ def assistant(request):
         reservation = None
         try:
             reservation = reserve(request.user)
-            result = advise(request.user, form.cleaned_data['question'], form.cleaned_data['place'], before_send=lambda: record_dispatch(reservation), public_context=request.session.get('public_weather_context', {}))
+            result = advise(request.user, form.cleaned_data['question'], form.cleaned_data['place'], before_send=lambda: record_dispatch(reservation), public_context=request.session.get('public_weather_context', {}), include_notes=form.cleaned_data['include_notes'])
             if result and result.get('public_context'):
                 request.session['public_weather_context'] = result['public_context']
             else:
