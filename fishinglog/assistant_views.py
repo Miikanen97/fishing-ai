@@ -27,8 +27,8 @@ def assistant(request):
                 request.session.pop('public_weather_context', None)
         except AssistantError as exc:
             message = str(exc)
-            if not settings.DEBUG and 'OPENAI_API_KEY' in message:
-                message = 'Kalastusavustaja ei ole juuri nyt käytettävissä. Yritä myöhemmin uudelleen.'
+            if 'OPENAI_API_KEY' in message:
+                message = 'Tekoälyavustaja ei ole tällä hetkellä käytettävissä.'
             form.add_error(None, message)
         finally:
             if reservation is not None:

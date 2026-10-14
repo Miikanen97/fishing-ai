@@ -47,7 +47,7 @@ def api_key_configured():
 def call_openai(instructions, payload, output_schema, token_limit, before_send=None):
     key = os.environ.get('OPENAI_API_KEY', '').strip()
     if not key:
-        raise AssistantError('Kalastusavustajaa ei ole vielä otettu käyttöön. Lisää palvelimelle OPENAI_API_KEY-ympäristömuuttuja.')
+        raise AssistantError('Tekoälyavustaja ei ole tällä hetkellä käytettävissä.')
     # Finish local serialization before charging. No automatic retries.
     payload_json = {'model': os.environ.get('OPENAI_MODEL', 'gpt-4.1-mini'), 'store': False,
         'instructions': instructions, 'input': json.dumps(payload, ensure_ascii=False, default=str),

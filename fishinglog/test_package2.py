@@ -78,12 +78,9 @@ class PackageTwoTests(TestCase):
         for debug in (False, True):
             with override_settings(DEBUG=debug):
                 for response in (self.client.get(url), self.client.post(url, {'question': 'Huomenna?'})):
-                    if debug:
-                        self.assertContains(response, 'OPENAI_API_KEY')
-                    else:
-                        self.assertContains(response, 'ei ole juuri nyt käytettävissä')
-                        self.assertNotContains(response, 'OPENAI_API_KEY')
-                        self.assertNotContains(response, 'PowerShell')
+                    self.assertContains(response, 'Tekoälyavustaja ei ole tällä hetkellä käytettävissä.')
+                    self.assertNotContains(response, 'OPENAI_API_KEY')
+                    self.assertNotContains(response, 'PowerShell')
 
     @patch('fishinglog.assistant_views.advise')
     def test_quick_questions_have_valid_existing_routes(self, advise):

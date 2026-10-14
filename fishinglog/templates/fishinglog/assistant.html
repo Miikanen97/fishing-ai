@@ -5,7 +5,7 @@
 {% block content %}
 <div class="row justify-content-center"><div class="col-12 col-xl-9">
 <h1>Kalastusavustaja</h1>
-{% if not api_key_configured %}<div class="alert alert-warning" role="alert">{% if development %}OPENAI_API_KEY puuttuu tämän palvelinprosessin ympäristöstä. Pysäytä vanha palvelin ja käynnistä Django siitä PowerShell-ikkunasta, jossa asetit ympäristömuuttujan.{% else %}Kalastusavustaja ei ole juuri nyt käytettävissä. Yritä myöhemmin uudelleen.{% endif %}</div>{% endif %}
+{% if not api_key_configured %}<div class="alert alert-warning" role="alert">Tekoälyavustaja ei ole tällä hetkellä käytettävissä.</div>{% endif %}
 <p class="text-secondary">Suunnittele seuraava kalareissu oman kalastushistoriasi ja sääennusteen avulla.</p>
 <div class="card p-3 p-md-4 mb-4"><form method="post" id="assistant-form">{% csrf_token %}
 {% for error in form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endfor %}

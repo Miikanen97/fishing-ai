@@ -2,19 +2,39 @@
 
 **Work in Progress – Actively Developed**
 
-Fishing AI is a personal fishing journal and planning application for Finnish lake fishing. It combines private trip and catch records, weather forecasts, interactive maps, and an AI-powered assistant. The application has a Finnish-language interface, responsive layouts, and light and dark themes.
+Fishing AI is a Django/Python application for recording and planning fishing trips on Finnish lakes. It brings together private trip and catch journals, catch photos and statistics, saved fishing spots, FMI weather forecasts, and an AI-powered assistant that explains conditions using weather data and personal fishing history. The Finnish-language interface supports mobile devices and light and dark themes.
 
 This is an actively developed portfolio project. The current features are implemented and covered by automated tests; the application is not presented as a finished commercial product or a scientifically validated fishing prediction service.
 
-## Current features
+## Screenshots
 
-- **Fishing trips and catches:** create, edit, and delete trips; record conditions and multiple catches in one submission; distinguish explicitly empty trips from missing catch information.
-- **AI-powered fishing assistant:** ask about your own history or upcoming fishing conditions. The server resolves dates and places, compares forecast times, and computes a deterministic 1–10 conditions score. OpenAI provides a written explanation; limited personal history affects confidence rather than reducing the conditions score.
-- **Weather forecasts:** FMI observations and forecasts, editable trip weather fields, a default weather location, and a compact homepage forecast. Missing weather is reported rather than invented.
-- **Fishing spots and maps:** private saved locations on Leaflet/OpenStreetMap maps, optional trip links, draggable markers, and browser geolocation requested only after a button press.
-- **Catch statistics and records:** species, lure, time-of-day and location summaries; personal weight and length records; the current month's three heaviest catches.
-- **User authentication:** Django authentication, registration, profile editing, password changes, and password-confirmed account deletion. Application queries restrict personal records to their owner.
-- **Catch photos:** optional validated JPEG, PNG and WebP uploads, normalized to JPEG with metadata removed. Photos are served through an authenticated owner-checked endpoint rather than public media URLs.
+The screenshots below show the Finnish-language interface in dark mode. The account, trips, catches and saved map location shown are demonstration data approved for publication, not private fishing records.
+
+### Homepage
+
+Weather forecasts, monthly catch highlights and recent trips in one overview.
+
+![Fishing AI homepage with a weather forecast and demonstration catch highlights](docs/screenshots/homepage.png)
+
+### Catch statistics and records
+
+Catch summaries, time-of-day charts and personal weight and length records, with a notice when the data sample is small.
+
+![Catch statistics and fish records using demonstration data](docs/screenshots/statistics.png)
+
+### Fishing trips
+
+A searchable trip list with catch status filters and a shortcut to add a new trip.
+
+![Fishing trip list with search fields and a demonstration trip](docs/screenshots/trips.png)
+
+### Fishing spots and maps
+
+Saved fishing spots on an interactive Leaflet/OpenStreetMap map. The marker and notes shown here belong to a demonstration location.
+
+![Fishing spots map with a saved demonstration location](docs/screenshots/fishing-spots.png)
+
+<!-- ai-assistant.png is retained in docs/screenshots but intentionally omitted here: it shows the assistant unavailable, not a generated recommendation. -->
 
 ## Technology
 
@@ -31,6 +51,20 @@ This is an actively developed portfolio project. The current features are implem
 | Validation and tests | Django test runner, Node.js test runner, JSON Schema |
 
 The browser submits requests to Django. The backend handles ownership checks, weather retrieval, place/date interpretation and scoring before making an optional OpenAI request. No OpenAI request is triggered merely by opening the assistant page.
+
+## Demo availability
+
+The public Railway demo is currently unavailable. To explore the application, follow the local development instructions below. Deployment configuration is included for reference; it does not indicate that a live demo is available.
+
+## Current features
+
+- **Fishing trips and catches:** create, edit, and delete trips; record conditions and multiple catches in one submission; distinguish explicitly empty trips from missing catch information.
+- **AI-powered fishing assistant:** ask about your own history or upcoming fishing conditions. The server resolves dates and places, compares forecast times, and computes a deterministic 1–10 conditions score. OpenAI provides a written explanation; limited personal history affects confidence rather than reducing the conditions score.
+- **Weather forecasts:** FMI observations and forecasts, editable trip weather fields, a default weather location, and a compact homepage forecast. Missing weather is reported rather than invented.
+- **Fishing spots and maps:** private saved locations on Leaflet/OpenStreetMap maps, optional trip links, draggable markers, and browser geolocation requested only after a button press.
+- **Catch statistics and records:** species, lure, time-of-day and location summaries; personal weight and length records; the current month's three heaviest catches.
+- **User authentication:** Django authentication, registration, profile editing, password changes, and password-confirmed account deletion. Application queries restrict personal records to their owner.
+- **Catch photos:** optional validated JPEG, PNG and WebP uploads, normalized to JPEG with metadata removed. Photos are served through an authenticated owner-checked endpoint rather than public media URLs.
 
 ## Local development
 

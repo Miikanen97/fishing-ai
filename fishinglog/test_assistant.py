@@ -117,7 +117,7 @@ class OpenAITransportTests(TestCase):
     @patch.dict(os.environ, {'OPENAI_API_KEY': ''})
     @patch('fishinglog.assistant.requests.post')
     def test_missing_key_does_not_call_network(self, post):
-        with self.assertRaises(ai.AssistantError):
+        with self.assertRaisesMessage(ai.AssistantError, 'Tekoälyavustaja ei ole tällä hetkellä käytettävissä.'):
             ai.call_openai('instructions', {}, ai.PLAN, 350)
         post.assert_not_called()
 
@@ -246,12 +246,13 @@ class KeyDiagnosticsTests(TestCase):
             for value, status in [('', 'ei'), ('test-only-placeholder', 'kyllä'), ('', 'ei')]:
                 with patch.dict(os.environ, {'OPENAI_API_KEY': value}):
                     response = self.client.get(reverse('fishinglog:assistant'))
-                    self.assertNotContains(response, 'OPENAI_API_KEY löytyi:')
+                    self.assertNotContains(response, 'OPENAI_API_KEY')
+                    self.assertNotContains(response, 'PowerShell')
                     if value:
-                        self.assertNotContains(response, 'OPENAI_API_KEY puuttuu')
+                        self.assertNotContains(response, 'Tekoälyavustaja ei ole tällä hetkellä käytettävissä.')
                         self.assertNotContains(response, value)
                     else:
-                        self.assertContains(response, 'OPENAI_API_KEY puuttuu')
+                        self.assertContains(response, 'Tekoälyavustaja ei ole tällä hetkellä käytettävissä.')
                     output = StringIO()
                     call_command('check_openai_key', stdout=output)
                     self.assertEqual(output.getvalue().strip(), 'OPENAI_API_KEY löytyi: ' + status)
